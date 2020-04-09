@@ -1,0 +1,636 @@
+<html>
+    <head>
+        <script type = "text/javascript" src = "JS/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        <style>
+            body {
+                width: 100%;
+                height: 100%;
+                margin-left: 1px;
+            }
+
+            div#topPane {
+                position: relative;
+                height: 10%;
+                width: 100%;
+                background-color: #a3a3a7;
+                margin-bottom: 2px;
+                box-shadow: 5px 10px #d0d0e8;
+            }
+
+            div#bottomPane {
+                position: relative;
+                height: 90%;
+                width: 100%;
+                background-color: rgb(227, 238, 227);
+            }
+
+            div#bottomLeftPane {
+                position: absolute;
+                height: 100%;
+                width: 15%;
+                background-color: yellow;
+                float: left;
+            }
+
+            div#menuPane {
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                background-color: yellowgreen;
+                overflow-y: auto;
+                /*padding: 5px 5px 5px 5px;*/
+            }
+            div.active {
+                background-color: rgb(67, 104, 66);
+                border: 1px solid rgb(67, 104, 66);
+                border-radius: 5px;
+            }
+
+            div#userMenu {  
+                font-size: 30px;
+                padding: 20px 5px 20px 15px;
+                cursor: pointer;
+            }
+            div#userMenu:hover {
+                border: 1px solid black;
+                border-radius: 5px;
+                box-shadow: 2px 3px grey;
+            }
+            label#userLabel {
+                width: 200px;
+                font-size: 17px;
+            }
+            input.uname {
+                width: 200px;
+                border-radius: 5px;
+            }
+
+            label#passLabel {
+                width: 200px;
+                font-size: 17px;
+            }
+            input.pass {
+                width: 200px;
+                border-radius: 5px;
+            }
+
+            div#addUserMsg {
+                margin-top: 20px;
+            }
+            div#userCtrl {
+                margin-top: 20px;
+            }
+            input#generateCsv {
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+
+            div#optionMenu {
+                font-size: 30px;
+                padding: 20px 5px 20px 15px;
+                cursor: pointer;
+            }
+            div#optionMenu:hover {
+                border: 1px solid black;
+                border-radius: 5px;
+                box-shadow: 2px 3px grey;
+            }
+
+            div#scenarioMenu {
+                font-size: 30px;
+                padding: 20px 5px 20px 15px;
+                cursor: pointer;
+            }
+            div#scenarioMenu:hover {
+                border: 1px solid black;
+                border-radius: 5px;
+                box-shadow: 2px 3px grey;
+            }
+            div#basicCallEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+            div#origEndUserOpt {
+                padding: 10px 5px 10px 15px;
+                cursor: pointer;
+            }
+            div#origEndUserOpt:hover {
+                text-shadow:1px 2px 5px grey;
+                background-color: rgb(199, 199, 143);
+            }
+            div#midEndUserOpt {
+                padding: 10px 5px 10px 15px;
+                cursor: pointer;
+            }
+            div#midEndUserOpt:hover {
+                text-shadow:1px 2px 5px grey;
+                background-color: rgb(199, 199, 143);
+            }
+            div#termEndUserOpt {
+                padding: 10px 5px 10px 15px;
+                cursor: pointer;
+            }
+            div#termEndUserOpt:hover {
+                text-shadow:1px 2px 5px grey;
+                background-color: rgb(199, 199, 143);
+            }
+            div#ivrsCallEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+            div#xferCallEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+            div#msgEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+
+            div#runMenu {
+                font-size: 30px;
+                padding: 20px 5px 20px 15px;
+                cursor: pointer;
+            }
+            div#runMenu:hover {
+                border: 1px solid black;
+                border-radius: 5px;
+                box-shadow: 2px 3px grey;
+            }
+
+            div#bottomRightPane {
+                position: absolute;
+                height: 100%;
+                width: 84.7%;
+                background-color: rgb(227, 238, 227);
+                margin-left: 15.3%;
+                overflow-y: auto;
+                border-radius: 5px;
+            }
+
+            div#callOptions {
+                position: relative;
+                height: 100%;
+                width: 100%;
+                border-radius: 5px;
+            }
+
+            div#basicCall {
+                position: relative;
+                width: 100%;
+                height: 100px;
+                font-size: 30px;
+                padding: 25px 20px 20px 20px;
+                background-color: rgb(197, 183, 183);
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            div#basicCall:hover {
+                margin-bottom: 3px;
+                border: 1px solid black;
+                box-shadow: 2px 3px grey;
+            }
+
+            div#ivrsCall {
+                position: relative;
+                width: 100%;
+                height: 100px;
+                font-size: 30px;
+                padding: 25px 20px 20px 20px;
+                background-color: rgb(201, 135, 135);
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            div#ivrsCall:hover {
+                margin-bottom: 3px;
+                border: 1px solid black;
+                box-shadow: 2px 3px grey;
+            }
+
+            div#xferCall {
+                position: relative;
+                width: 100%;
+                height: 100px;
+                font-size: 30px;
+                padding: 25px 20px 20px 20px;
+                background-color: rgb(114, 70, 70);
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            div#xferCall:hover {
+                margin-bottom: 3px;
+                border: 1px solid black;
+                box-shadow: 2px 3px grey;
+            }
+
+            div#msg {
+                position: relative;
+                width: 100%;
+                height: 100px;
+                font-size: 30px;
+                padding: 25px 20px 20px 20px;
+                background-color: rgb(199, 94, 94);
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            div#msg:hover {
+                margin-bottom: 3px;
+                border: 1px solid black;
+                box-shadow: 2px 3px grey;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <div id = "topPane">
+        </div>
+
+        <div id = "bottomPane">
+            <div id  = "bottomLeftPane">
+                <div id = "menuPane">
+                    <div id = "userMenu" class = "menus active">
+                        USERS
+                    </div>
+                    <div id = "optionMenu">
+                        OPTIONS
+                    </div>
+                    <div id = "scenarioMenu">
+                        SCENARIOS
+                    </div>
+                    <div id = "basicCallEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                        <div id = "termEndUserOpt">TERMINATING</div>
+                    </div>
+                    <div id = "ivrsCallEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                    </div>
+                    <div id = "xferCallEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                        <div id = "midEndUserOpt">TRANSFERER</div>
+                        <div id = "termEndUserOpt">TERMINATING</div>
+                    </div>
+                    <div id = "msgEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                        <div id = "termEndUserOpt">TERMINATING</div>
+                    </div>
+                    <div id = "runMenu">
+                        RUN
+                    </div>
+                </div>
+            </div>
+
+            <div id = "bottomRightPane">
+                <div class = "container" id = "users">
+                    <h2>Users</h2>
+                    <div id = "userDetails">
+                    <div class = "users">
+                        <label id = "userLabel"> Username </label>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <label id = "passLabel"> Password </label>
+                        <br>
+                        <input type = "number" class = "uname" value = "">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type = "password" class = "pass" value = "">
+                    </div>
+                    <div class = "users">
+                        <br>
+                        <label id = "userLabel"> Username </label>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <label id = "passLabel"> Password </label>
+                        <br>
+                        <input type = "number" class = "uname" value = "">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type = "password" class = "pass" value = "">
+                    </div>
+                    </div>
+                    <br>
+                    <div id = 'addUserMsg'>
+                        <input type = 'checkbox' id = 'uerRange'>
+                        <label for = 'userRange'>Check this to add range of users</label>
+                    </div>
+                    <div id = "userCtrl">
+                        <i id = "addUser" class="fa fa-plus fa-1x" aria-hidden="true" style = "cursor: pointer;">&nbsp;Add User</i>
+                        <br><br><input type = "button" id = "generateCsv" value = "Generate">
+                    </div>
+                    <br>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>UserName</th>
+                                <th>AuthHeader</th>
+                                <th>LocalIP</th>
+                                <th>LocalPort</th>
+                                <th>Server</th>
+                                <th>DestNum</th>
+                            </tr>
+                        </thead>
+                        <tbody id = "userDataBody">
+                            <!--tr class = "warning">
+                                <td></td>
+                                <td></td>
+                                <td>192.168.137.43</td>
+                                <td>5082</td>
+                                <td>192.168.137.42</td>
+                                <td></td>
+                            </tr>
+                            <tr class = "info">
+                                <td></td>
+                                <td></td>
+                                <td>192.168.137.43</td>
+                                <td>5082</td>
+                                <td>192.168.137.42</td>
+                                <td></td>
+                            </tr-->
+                        </tbody>
+                    </table>
+                </div>
+                <div id = "callOptions">
+                    <div id = "basicCall">
+                        BASIC CALL
+                    </div>
+
+                    <div id = "ivrsCall">
+                        IVRS CALL
+                    </div>
+
+                    <div id = "xferCall">
+                        TRANSFER
+                    </div>
+
+                    <div id = "msg">
+                        MESSAGE
+                    </div>
+                </div>
+
+                <div id = "scenarioOptions">
+
+                </div>
+
+                <div id = "runOptions">
+
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            var scenarioSeleted = "B";
+
+            $(document).ready(function(){
+                $('#users').show();
+                $('#callOptions').hide();
+                $('#scenarioOptions').hide();
+                $('.endPoints').hide();
+                $('runOptions').hide();
+            });
+
+            $('#userMenu').click(function() {
+                $('.menus').removeClass("active");
+                $("#userMenu").addClass("menus active");
+                $('#callOptions').hide();
+                $('#scenarioOptions').hide();
+                $('.endPoints').hide("slow");
+                $('runOptions').hide();
+                $('#users').show();
+            });
+            $('#optionMenu').click(function() {
+                $('.menus').removeClass("active");
+                $("#optionMenu").addClass("menus active");
+                $('#users').hide();
+                $('#scenarioOptions').hide();
+                $('.endPoints').hide("slow");
+                $('runOptions').hide();
+                $('#callOptions').show();
+            });
+            $('#scenarioMenu').click(function() {
+                $('.menus').removeClass("active");
+                $("#scenarioMenu").addClass("menus active");
+                $('#users').hide();
+                $('#callOptions').hide();
+                $('runOptions').hide();
+                $('#scenarioOptions').show();
+                if(scenarioSeleted.localeCompare("B") == 0)
+                {
+                    $('#basicCallEndPoints').show("slow");
+                }
+                else if(scenarioSeleted.localeCompare("I") == 0)
+                {
+                    $('#ivrsCallEndPoints').show("slow");
+                }
+                else if(scenarioSeleted.localeCompare("T") == 0)
+                {
+                    $('#xferCallEndPoints').show("slow");
+                }
+                else if(scenarioSeleted.localeCompare("M") == 0)
+                {
+                    $('#msgEndPoints').show("slow");
+                }
+            });
+            $('#runMenu').click(function() {
+                $('.menus').removeClass("active");
+                $("#runMenu").addClass("menus active");
+                $('#users').hide();
+                $('#callOptions').hide();
+                $('#scenarioOptions').hide();
+                $('.endPoints').hide("slow");
+                $('runOptions').show();
+            });
+
+            $('i[id=addUser]').click(function () {
+      
+                var usersCnt = $("div[class*='users']").length;
+                $("#userDetails").append('<div class = "users" id = "users_' + usersCnt + '">\
+                                            <br>\
+                                            <i id = "userDel" onclick = "removeUserAdded(this)" style = "cursor:pointer;" class="fa fa-times" aria-hidden="true"></i><br>\
+                                            <label id = "userLabel"> Username </label>\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            <label id = "passLabel"> Password </label>\
+                                            <br>\
+                                            <input type = "number" class = "uname" value = "">\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                            <input type = "password" class = "pass" value = "">\
+                                          </div>');
+                          
+                usersCnt += 1;
+
+                if(usersCnt > 2)
+                {
+                    $("#addUserMsg").hide();
+                }
+            });
+
+            function removeUserAdded(obj)
+            {
+                var id = obj.parentNode.id;
+                obj.parentNode.remove();
+                document.getElementById(id).remove();
+                usersCnt = $("div[class*='users']").length;
+                if(usersCnt == 2)
+                {
+                    $("#addUserMsg").show("slow");
+                }
+            }
+
+            $('input[id=generateCsv]').click(function() {
+                
+                var usersCnt = $("input[class*='uname']").length;
+                var users = "";
+                var pass  = "";
+                var U, P;
+
+                $('#userDataBody').empty();
+
+                for(i = 0;i < (usersCnt - 1);i++)
+                {
+                    U = document.getElementsByClassName("uname")[i].value;
+                    P = document.getElementsByClassName("pass")[i].value;
+                    users +=  U + ";";
+                    pass  +=  P + ";";
+                    if(i % 2 == 0)
+                    {
+                        $('#userDataBody').append('<tr class = "warning" id = "users_' + i + '">\
+                                                    <td>' + U + '</td>\
+                                                    <td></td>\
+                                                    <td>192.168.137.43</td>\
+                                                    <td>5082</td>\
+                                                    <td>192.168.137.42</td>\
+                                                    <td></td>\
+                                                </tr>');
+                    }
+                    else
+                    {
+                        $('#userDataBody').append('<tr class = "info" id = "users_' + i + '">\
+                                                    <td>' + U + '</td>\
+                                                    <td></td>\
+                                                    <td>192.168.137.43</td>\
+                                                    <td>5082</td>\
+                                                    <td>192.168.137.42</td>\
+                                                    <td></td>\
+                                                </tr>');
+                    }
+                }
+                U = document.getElementsByClassName("uname")[i].value;
+                P = document.getElementsByClassName("pass")[i].value;
+                users +=  U;
+                pass  +=  P;
+                if(i % 2 == 0)
+                {
+                    $('#userDataBody').append('<tr class = "warning" id = "users_' + i + '">\
+                                                <td>' + U + '</td>\
+                                                <td></td>\
+                                                <td>192.168.137.43</td>\
+                                                <td>5082</td>\
+                                                <td>192.168.137.42</td>\
+                                                <td></td>\
+                                            </tr>');
+                }
+                else
+                {
+                    $('#userDataBody').append('<tr class = "info" id = "users_' + i + '">\
+                                                <td>' + U + '</td>\
+                                                <td></td>\
+                                                <td>192.168.137.43</td>\
+                                                <td>5082</td>\
+                                                <td>192.168.137.42</td>\
+                                                <td></td>\
+                                            </tr>');
+                }
+
+                /*
+                $.ajax({
+                    url: 'generateFiles.php',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    data: {
+                        U: users,
+                        P: pass
+                    },
+                    success: function(result, status){
+                        alert(result+","+status);
+                    },
+                    error: function(status, error) {
+                        alert(status+","+error);
+                    }
+                });
+                */
+
+                return false;
+            });
+
+            $('#basicCall').click(function(){
+                scenarioSeleted = "B";
+                $('#scenarioMenu').click();
+                $('#basicCallEndPoints').show("slow");
+            });
+            $('#ivrsCall').click(function(){
+                scenarioSeleted = "I";
+                $('#scenarioMenu').click();
+                $('#ivrsCallEndPoints').show("slow");
+            });
+            $('#xferCall').click(function(){
+                scenarioSeleted = "T";
+                $('#scenarioMenu').click();
+                $('#xferCallEndPoints').show("slow");
+            });
+            $('#msg').click(function(){
+                scenarioSeleted = "M";
+                $('#scenarioMenu').click();
+                $('#msgEndPoints').show("slow");
+            });
+        </script>
+    </body>
+</html>
