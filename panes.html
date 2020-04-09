@@ -4,12 +4,14 @@
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-        <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        <link href="https://use.fontawesome.com/releases/v5.0.1/css/all.css" rel="stylesheet">
+        <!--link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous"-->
         <style>
             body {
                 width: 100%;
                 height: 100%;
                 margin-left: 1px;
+                overflow-y: hidden;
             }
 
             div#topPane {
@@ -110,7 +112,43 @@
                 border-radius: 5px;
                 box-shadow: 2px 3px grey;
             }
+            div#regEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
             div#basicCallEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+            div#ivrsCallEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+            div#xferCallEndPoints {
+                font-size: 15px;
+                padding: 0px 0px 0px 0px;
+                background-color: rgb(125, 182, 123);
+                border: 1px solid rgb(125, 182, 123);
+                border-radius: 5px;
+                margin-top: -3px;
+                display: none;
+            }
+            div#msgEndPoints {
                 font-size: 15px;
                 padding: 0px 0px 0px 0px;
                 background-color: rgb(125, 182, 123);
@@ -143,33 +181,6 @@
                 text-shadow:1px 2px 5px grey;
                 background-color: rgb(199, 199, 143);
             }
-            div#ivrsCallEndPoints {
-                font-size: 15px;
-                padding: 0px 0px 0px 0px;
-                background-color: rgb(125, 182, 123);
-                border: 1px solid rgb(125, 182, 123);
-                border-radius: 5px;
-                margin-top: -3px;
-                display: none;
-            }
-            div#xferCallEndPoints {
-                font-size: 15px;
-                padding: 0px 0px 0px 0px;
-                background-color: rgb(125, 182, 123);
-                border: 1px solid rgb(125, 182, 123);
-                border-radius: 5px;
-                margin-top: -3px;
-                display: none;
-            }
-            div#msgEndPoints {
-                font-size: 15px;
-                padding: 0px 0px 0px 0px;
-                background-color: rgb(125, 182, 123);
-                border: 1px solid rgb(125, 182, 123);
-                border-radius: 5px;
-                margin-top: -3px;
-                display: none;
-            }
 
             div#runMenu {
                 font-size: 30px;
@@ -197,6 +208,22 @@
                 height: 100%;
                 width: 100%;
                 border-radius: 5px;
+            }
+
+            div#reg {
+                position: relative;
+                width: 100%;
+                height: 100px;
+                font-size: 30px;
+                padding: 25px 20px 20px 20px;
+                background-color: rgb(226, 205, 205);
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            div#reg:hover {
+                margin-bottom: 3px;
+                border: 1px solid black;
+                box-shadow: 2px 3px grey;
             }
 
             div#basicCall {
@@ -237,7 +264,7 @@
                 height: 100px;
                 font-size: 30px;
                 padding: 25px 20px 20px 20px;
-                background-color: rgb(114, 70, 70);
+                background-color: rgb(199, 94, 94);
                 cursor: pointer;
                 border-radius: 5px;
             }
@@ -253,7 +280,7 @@
                 height: 100px;
                 font-size: 30px;
                 padding: 25px 20px 20px 20px;
-                background-color: rgb(199, 94, 94);
+                background-color: rgb(114, 70, 70);
                 cursor: pointer;
                 border-radius: 5px;
             }
@@ -261,6 +288,99 @@
                 margin-bottom: 3px;
                 border: 1px solid black;
                 box-shadow: 2px 3px grey;
+            }
+
+            div#scenarioOptions {
+                padding: 20px 20px 20px 20px;
+            }
+            p.origRegMsg {
+                border: 2px solid rgb(18, 110, 18);
+                border-radius: 10px;
+                padding: 20px 20px 20px 20px;
+                font-size: 20px;
+                background-color: rgb(209, 209, 206);
+            }
+            div#newHeaderAdd {
+                padding: 5px 10px 20px 5px;
+            }
+            input.userHeaderField {
+                font-size: 20px;
+                border-radius: 5px;
+                padding-left: 5px;
+            }
+            input.userHeaderValue {
+                font-size: 20px;
+                border-radius: 5px;
+                padding-left: 5px;
+            }
+            input.addUserHeaderToMsg {
+                font-size: 18px;
+                border-radius: 5px;
+            }
+            div#origRegResp {
+                padding: 5px 10px 20px 5px;
+                font-size: 15px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+            label.respLabel{
+                display: inline-block;
+                background-color: rgba(255, 255, 255, .9);
+                border: 2px solid rgba(139, 139, 139, .3);
+                color: #adadad;
+                border-radius: 25px;
+                white-space: nowrap;
+                margin: 3px 0px;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                transition: all .2s;
+            }
+            label.respLabel {
+                padding: 8px 12px;
+                cursor: pointer;
+            }
+            label.respLabel::before {
+                display: inline-block;
+                font-style: normal;
+                font-variant: normal;
+                text-rendering: auto;
+                -webkit-font-smoothing: antialiased;
+                font-family: "Font Awesome\ 5 Free";
+                font-weight: 700;
+                font-size: 12px;
+                padding: 2px 6px 2px 2px;
+                content: "\f067";
+                transition: transform .3s ease-in-out;
+            }
+            input.respInput[type="checkbox"]:checked + label.respLabel::before {
+                content: "\f00c";
+                transform: rotate(-360deg);
+                transition: transform .3s ease-in-out;
+            }
+            input.respInput[type="checkbox"]:checked + label.respLabel {
+                border: 2px solid #1bdbf8;
+                background-color: #12bbd4;
+                color: #fff;
+                transition: all .2s;
+            }
+            input.respInput[type="checkbox"] {
+                display: absolute;
+            }
+            input.respInput[type="checkbox"] {
+                position: absolute;
+                opacity: 0;
+            }
+            input.respInput[type="checkbox"]:focus + label.respLabel {
+                border: 2px solid #e9a1ff;
+            }
+            
+            input#scenarioGen {
+                margin-left: 5px;
+                border-radius: 5px;
+                font-size: 20px;
             }
 
         </style>
@@ -281,6 +401,9 @@
                     </div>
                     <div id = "scenarioMenu">
                         SCENARIOS
+                    </div>
+                    <div id = "regEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
                     </div>
                     <div id = "basicCallEndPoints" class = "endPoints">
                         <div id = "origEndUserOpt">ORIGINATING</div>
@@ -390,6 +513,10 @@
                     </table>
                 </div>
                 <div id = "callOptions">
+                    <div id = "reg">
+                        REGISTRATION
+                    </div>
+
                     <div id = "basicCall">
                         BASIC CALL
                     </div>
@@ -408,7 +535,68 @@
                 </div>
 
                 <div id = "scenarioOptions">
+                    <div id = "regScenario">
+                        <p class = "origRegMsg">
+                            REGISTER sip:[field4] SIP/2.0<br>
+                            Via: SIP/2.0/UDP [field2]:[field3];rport;branch=[branch]<br>
+                            From: [field0] &lt;sip:[field0]@[field4]&gt;;tag=[call_number]<br>
+                            To: [field0] &lt;sip:[field0]@[field4]&gt;<br>
+                            Call-ID: [call_id]<br>
+                            CSeq: 1 REGISTER<br>
+                            Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=864000<br>
+                            Max-Forwards: 70<br>
+                            Content-Length: 0<br>
+                            User-Agent: sipp<br>
+                        </p>                        
+                        <div id = "newHeaderAdd">
+                            <label>New Header</label><br>
+                            <input type = "text" class = "userHeaderField" value = "" placeholder = "Field Name">
+                            &nbsp;&nbsp;&nbsp;&nbsp;<b>:</b>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type = "text" class = "userHeaderValue" value = "" placeholder = "Field Value">
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type = "button" class = "addUserHeaderToMsg" value = "ADD">
+                        </div>
+                        
+                        <div id = "origRegResp">                        
+                            <input type = 'checkbox' id = 'reg403resp' value = "403 Forbidden" class = "respInput">
+                            <label for = 'reg403resp' class = "respLabel">403 Forbidden</label><br>
 
+                            <input type = 'checkbox' id = 'reg503resp' class = "respInput">
+                            <label for = 'reg503resp' class = "respLabel">503 Service Unavailable</label><br>
+                    
+                            <input type = 'checkbox' id = 'reg401resp' checked = "checked" onclick = "return false;" class = "respInput">
+                            <label for = 'reg401resp' class = "respLabel">401 Unauthorized</label>
+                        </div>
+                        
+                        <p class = "origRegMsg">
+                            REGISTER sip:[field4] SIP/2.0<br>
+                            Via: SIP/2.0/UDP [field2]:[field3];rport;branch=[branch]<br>
+                            From: [field0] &lt;sip:[field0]@[field4]&gt;;tag=[call_number]<br>
+                            To: [field0] &lt;sip:[field0]@[field4]&gt;<br>
+                            Call-ID: [call_id]<br>
+                            CSeq: 2 REGISTER<br>
+                            Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=864000<br>
+                            [field1]<br>
+                            Max-Forwards: 70<br>
+                            Content-Length: 0<br>
+                            User-Agent: sipp<br>
+                        </p>
+                        <div id = "newHeaderAdd">
+                            <label>New Header</label><br>
+                            <input type = "text" class = "userHeaderField" value = "" placeholder = "Field Name">
+                            &nbsp;&nbsp;&nbsp;&nbsp;<b>:</b>&nbsp;&nbsp;&nbsp;
+                            <input type = "text" class = "userHeaderValue" value = "" placeholder = "Field Value">
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type = "button" class = "addUserHeaderToMsg" value = "ADD">
+                        </div>
+                        
+                        <div id = "origRegResp">
+                            <input type = 'checkbox' id = 'reg200resp' checked = "checked" onclick = "return false;" class = "respInput">
+                            <label for = 'reg200resp' class = "respLabel">200 OK</label>
+                        </div>
+
+                        <input type = "button" id = "scenarioGen" value = "GENERATE">
+                    </div>
                 </div>
 
                 <div id = "runOptions">
@@ -419,6 +607,15 @@
         
         <script>
             var scenarioSeleted = "B";
+
+            $('.addUserHeaderToMsg').click(function(){
+                var obj = $(this).prev();
+                var val = obj.val();
+                obj = obj.prev().prev();
+                var fld = obj.val();
+                obj = $(this).parent().prev();
+                obj.append(fld + ":" + val + "<br>");
+            });
 
             $(document).ready(function(){
                 $('#users').show();
@@ -453,7 +650,11 @@
                 $('#callOptions').hide();
                 $('runOptions').hide();
                 $('#scenarioOptions').show();
-                if(scenarioSeleted.localeCompare("B") == 0)
+                if(scenarioSeleted.localeCompare("R") == 0)
+                {
+                    $('#regEndPoints').show("slow");
+                }
+                else if(scenarioSeleted.localeCompare("B") == 0)
                 {
                     $('#basicCallEndPoints').show("slow");
                 }
@@ -611,6 +812,11 @@
                 return false;
             });
 
+            $('#reg').click(function(){
+                scenarioSeleted = "R";
+                $('#scenarioMenu').click();
+                $('#regEndPoints').show("slow");
+            });
             $('#basicCall').click(function(){
                 scenarioSeleted = "B";
                 $('#scenarioMenu').click();
