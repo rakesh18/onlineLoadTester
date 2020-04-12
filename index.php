@@ -5,65 +5,353 @@
 <html>
   <head>
     <title>Load Tester</title>
-    <h1>Welcom to Load Tester</h1>
-    <script type = "text/javascript" src = "JS/jquery.min.js"></script>
+    <meta charset = "UTF-8">
+    <link rel = "apple-touch-icon" type = "image/png" href = "https://static.codepen.io/assets/favicon/apple-touch-icon-5ae1a0698dcc2402e9712f7d01ed509a57814f994c660df9f7a952f3060705ee.png" />
+    <meta name = "apple-mobile-web-app-title" content = "CodePen">
+    <link rel = 'stylesheet' href = 'https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css'>
+    <link rel = 'stylesheet' href = 'https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css'>
+    <link rel = 'stylesheet' href = 'https://cdnjs.cloudflare.com/ajax/libs/jquery.bootstrapvalidator/0.5.0/css/bootstrapValidator.min.css'>
+    <style>
+      div#clientDetails {
+        display: none;
+      }
+      div#networkIp {
+        display: none;
+      }
+    </style>
   </head>
 
   <body>
-    <form action="connect.php" method="POST">
-      <p>Enter a nickname<p>
-      <input type = "text" id = "nickname" name = "nickname" value = "" placeholder = "Nick Name"><br><br>
-      <p>Choose where you want to run the load</p>
-      <input type="radio" id="inplace" name="LOC" value="in" checked = "checked">
-      <label for="inplace">Inplace</label><br><br>
-      <input type="radio" id="external" name="LOC" value="ext">
-      <label for="external">External</label><br><br>
-      <div id = "extDiv" style = "display:none;">
-        <input type="text" id="extIp" name="EIP" value="" placeholder="Enter the External IP"><br><br>
-        <input type="text" id="extIpU" name="EIPU" value="" placeholder="Enter the External IP User"><br><br>
-        <input type="password" id="extIpP" name="EIPP" value="" placeholder="Enter the External IP Password">
-      </div>
-      <p>Choose your network</p>
-      <input type="radio" id="ims" name="NWRK" value="ims">
-      <label for="ims">IMS</label><br><br>
-      <div id = "pcscfDiv" style = "display: none">
-        <input type="text" id="pcscfIp" name = "PCSCFIP" value="" placeholder="Enter the IP of PCSCF"><br><br>
-        <input type="text" id="pcscfIpU" name = "PCSCFIPU" value="" placeholder="Enter the Border IP User"><br><br>
-        <input type="password" id="pcscfIpP" name = "PCSCFIPP" value="" placeholder="Enter the Border IP Password"><br><br>
-        <input type="text" id="icscfIp" name = "ICSCFIP" value="" placeholder="Enter the IP of ICSCF"><br><br>
-      </div>
-      <input type="radio" id="maxng" name="NWRK" value="maxng">
-      <label for="maxng">MAX-NG/SAMWAD</label><br><br>
-      <div id = "sbcDiv" style = "display:none">
-        <input type="text" id="sbcIp" name = "SBCIP" value="" placeholder="Enter the IP of SBC"><br><br>
-        <input type="text" id="sbcIpU" name = "SBCIPU" value="" placeholder="Enter the Border IP User"><br><br>
-        <input type="password" id="sbcIpP" name = "SBCIPP" value="" placeholder="Enter the Border IP Password"><br><br>
-      </div>
-      <input type="submit" id="ok" value="GO">
-    </form>
+    <br>
+    <div class = "container">
+      <form class = "well form-horizontal" action = "#" id = "startForm" onsubmit = "return submitForm();" method = "POST" enctype = "multipart/form-datam">
+        <fieldset>
+          <legend><center><h2><b>Welcome to Load Tester</b></h2></center></legend><br>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label">User Name</label>  
+            <div class = "col-md-4 inputGroupContainer">
+            <div class = "input-group">
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <input  name = "userName" placeholder = "User Name" class = "form-control" type = "text">
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Project Name</label> 
+              <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <input name = "projectName" placeholder = "Project Name" class = "form-control" type = "text">
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group"> 
+            <label class = "col-md-4 control-label">Client Location</label>
+            <div class = "col-md-4 selectContainer">
+              <div class = "input-group">
+                <span class = "input-group-addon"><i class = "glyphicon glyphicon-list"></i></span>
+                <select name = "location" class = "form-control selectpicker">
+                  <option value = "inplace">Inplace</option>
+                  <option value = "external">External</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group" id = "clientDetails">
+            <div class = "form-group">
+              <label class = "col-md-4 control-label" >Client IP</label> 
+                <div class = "col-md-4 inputGroupContainer">
+                <div class = "input-group">
+              <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+              <input name = "clientIp" placeholder = "Client IP" class = "form-control" type = "text">
+                </div>
+              </div>
+            </div>
+
+            <div class = "form-group">
+              <label class = "col-md-4 control-label" >Client Username</label> 
+                <div class = "col-md-4 inputGroupContainer">
+                <div class = "input-group">
+              <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+              <input name = "clientUsername" placeholder = "Client Username" class = "form-control" type = "text">
+                </div>
+              </div>
+            </div>
+
+            <div class = "form-group">
+              <label class = "col-md-4 control-label" >Client Password</label> 
+                <div class = "col-md-4 inputGroupContainer">
+                <div class = "input-group">
+              <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+              <input name = "clientPassword" placeholder = "Client Password" class = "form-control" type = "password">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group"> 
+            <label class = "col-md-4 control-label">Network</label>
+            <div class = "col-md-4 selectContainer">
+              <div class = "input-group">
+                <span class = "input-group-addon"><i class = "glyphicon glyphicon-list"></i></span>
+                <select name = "network" class = "form-control selectpicker">
+                  <option value = "max">MAX-NG/SAMVAD</option>
+                  <option value = "ims">IMS</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Border IP</label> 
+              <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <input name = "borderIp" placeholder = "Border IP" class = "form-control" type = "text">
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group" id = "networkIp">
+            <label class = "col-md-4 control-label" >Network IP</label> 
+              <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <input name = "networkIp" placeholder = "Network IP" class = "form-control" type = "text">
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Border Username</label> 
+              <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <input name = "borderUsername" placeholder = "Border Username" class = "form-control" type = "text">
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Border Password</label> 
+              <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <input name = "borderPassword" placeholder = "Border Password" class = "form-control" type = "password">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-md-4 control-label"></label>
+            <div class="col-md-4"><br>
+              &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<button type="submit" class="btn btn-warning" >&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspSUBMIT <span class="glyphicon glyphicon-send"></span>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</button>
+            </div>
+          </div>
+
+        </fieldset>
+      </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js" type="text/javascript"></script>
+    <script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-157cd5b220a5c80d4ff8e0e70ac069bffd87a61252088146915e8726e5d9f147.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap-validator/0.4.5/js/bootstrapvalidator.min.js'></script>
     <script type = "text/javascript">
-      $('input[name=LOC]').click(function () {
-	if (this.id == "external") 
-	{
-          $("#extDiv").show('slow');
-        } 
-	else 
-	{
-          $("#extDiv").hide('slow');
+      /*
+      $('#validate').click(function(){
+        var uname = $('#uname').val();
+        var projctName = $('#projname').val();
+        var loc = $("input[name='LOC']:checked").val();
+        var eip = $('#extIp').val();
+        var eu = $('#extIpU').val();
+        var ep = $('#extIpP').val();
+        var nwk = $("input[name='NWRK']:checked").val();
+        var pip = $('#pcscfIp').val();
+        var iip = $('#icscfIp').val();
+        var pu = $('#pcscfIpU').val();
+        var pp = $('#pcscfIpP').val();
+        var sip = $('#sbcIp').val();
+        var su = $('#sbcIpU').val();
+        var sp = $('#sbcIpP').val();
+
+        $.ajax({
+          url: 'validateAndCreate.php',
+          type: 'POST',
+          dataType: 'JSON',
+          data: {
+              UNAME: uname,
+              PNAME: projctName,
+              LOC: loc,
+              NWRK: nwk,
+              PCSCFIP: pip,
+              PCSCFIPU: pu,
+              PCSCFIPP: pp,
+              ICSCFIP: iip,
+              SBCIP: sip,
+              SBCIPU: su,
+              SBCIPP: sp,
+              EIP: eip,
+              EIPU: eu,
+              EIPP: ep
+          },
+          success: function(result, status){
+              alert(result + " , " + status);
+              window.location.href = "connect.php?menu=cases";
+              window.location.replace("connect.php?menu=cases");
+          },
+          error: function(status, error) {
+              alert(status + " , " + error);
+          }
+        });
+      });
+      */
+      $(document).ready(function() {
+        $('#startForm').bootstrapValidator({
+          feedbackIcons: {
+            valid: 'glyphicon glyphicon-ok',
+            invalid: 'glyphicon glyphicon-remove',
+            validating: 'glyphicon glyphicon-refresh'
+          },
+          fields: {
+            userName: {
+              validators: {
+                stringLength: {
+                  min: 2,
+                },
+                notEmpty: {
+                  message: 'Please enter user name'
+                }
+              }
+            },
+            projectName: {
+              validators: {
+                stringLength: {
+                  min: 2,
+                },
+                notEmpty: {
+                  message: 'Please enter project name'
+                }
+              }
+            },
+            location: {
+              validators: {
+                notEmpty: {
+                  message: 'Please select one location'
+                }
+              }
+            },
+            clientIp: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter client ip'
+                }
+              }
+            },
+            clientUsername: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter client user name'
+                }
+              }
+            },
+            clientPassword: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter client password'
+                }
+              }
+            },
+            network: {
+              validators: {
+                notEmpty: {
+                  message: 'Please select one network'
+                }
+              }
+            },
+            borderIp: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter border ip'
+                }
+              }
+            },
+            networkIp: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter network ip'
+                }
+              }
+            },
+            borderUsername: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter border user name'
+                }
+              }
+            },
+            borderPassword: {
+              validators: {
+                notEmpty: {
+                  message: 'Please enter border password'
+                }
+              }
+            },
+          }
+        })
+      });
+
+      $('select[name="location"]').change(function(){
+        if($(this).val() == "external"){
+          $('#clientDetails').show("slow");
+        }
+        else if($(this).val() == "inplace"){
+          $('#clientDetails').hide("slow");
         }
       });
-      $('input[name=NWRK]').click(function () {
-	if (this.id == "ims") 
-	{
-	  $("#sbcDiv").hide();
-          $("#pcscfDiv").show('slow');
-        } 
-	else 
-	{
-	  $("#pcscfDiv").hide();
-          $("#sbcDiv").show('slow');
+      $('select[name="network"]').change(function(){
+        if($(this).val() == "ims"){
+          $('#networkIp').show("slow");
+        }
+        else if($(this).val() == "max"){
+          $('#networkIp').hide("slow");
         }
       });
+
+      function submitForm()
+      {
+        if($('form').data('submitted') === true)
+        {
+          alert("form alreday submitted");
+        }
+        else
+        {
+          var form_data = new FormData(document.getElementById("startForm"));
+          alert("Sending form details...");
+          $('form').data('submitted', true);
+          $.ajax({
+            url: "validateAndCreate.php",
+            type: "POST",
+            data: form_data,
+            processData: false,
+            contentType: false,
+            success: function(result, status){
+              alert(result + " , " + status);
+              //window.location.href = "connect.php?menu=cases";
+              //window.location.replace("connect.php?menu=cases");
+            },
+            error: function(status, error) {
+                alert(status + " , " + error);
+            }
+          });
+        }
+        return false;
+      }
     </script>
   </body>
 </html>

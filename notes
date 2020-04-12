@@ -1,0 +1,8 @@
+
+brew install php
+brew services start php
+brew install libssh2
+
+brew install httpd
+brew services start httpd
+

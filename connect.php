@@ -1,508 +1,792 @@
-<!--?
-session_start();
+<?php
+  session_start();
 
-include('Net/SSH2.php');
-$nickname       = "";
-$location       = "";
-$network        = "";
-$pcscfIp        = "";
-$borderUser     = "";
-$borderPassword = "";
-$icscfIp        = "";
-$sbcIp          = "";
-$clientIp       = "";
-$clientUser     = "";
-$clientPassword = "";
-
-$nickname = $_POST["nickname"];
-$location = $_POST["LOC"];
-$network  = $_POST["NWRK"];
-
-if($network === "ims")
-{
-  $pcscfIp        = $_POST["PCSCFIP"];
-  $borderUser     = $_POST["PCSCFIPU"];
-  $borderPassword = $_POST["PCSCFIPP"];
-  $icscfIp        = $_POST["ICSCFIP"];
-
-  //echo $pcscfIp."<br>";
-  //echo $icscfIp."<br>";
-  //echo $borderUser."<br>";
-  //echo $borderPassword."<br>";
-}
-else
-{
-  $sbcIp          = $_POST["SBCIP"];
-  $borderUser     = $_POST["SBCIPU"];
-  $borderPassword = $_POST["SBCIPP"];
-
-  //echo $sbcIp."<br>";
-  //echo $borderUser."<br>";
-  //echo $borderPassword."<br>";
-  $sshSBC = new Net_SSH2($sbcIp);
-  if (!$sshSBC->login($borderUser, $borderPassword)) 
+  if(isset($_COOKIE["userName"]))
   {
-    exit('Couldnot connect to border server.');
+    $userName = $_COOKIE['userName'];
   }
-
-  $procIdCmd = "ps -ef | grep cdotsi";
-  $shellCmdRes = $sshSBC->exec($procIdCmd);
-  //echo "Command output: ".$shellCmdRes."<br>";
-  if(strpos($shellCmdRes, "cdotsi") === FALSE ||
-     strpos($shellCmdRes, "locationalias") === FALSE)
+  if(isset($_COOKIE["projctName"]))
   {
-    exit("Border server is not running. Please cconsult the server team for the issue.");
+    $projctName = $_COOKIE['projctName'];
   }
-}
+  $userDir = "projects/" . $userName."_".$projctName . "_load/";
 
-$userDir = $nickname."_loadtester/";
-
-if($location === "ext")
-{
-  $clientIp       = $_POST["EIP"];
-  $clientUser     = $_POST["EIPU"];
-  $clientPassword = $_POST["EIPP"];
-
-  $sshClient = new Net_SSH2($clientIp);
-  if (!$sshClient->login($clientUser, $clientPassword)) 
+  if(isset($_GET['menu']))
   {
-    exit('Could not connect to client system.');
-  }
-
-  /*
-   * Removing if the directory already esists.
-   */
-  $rmDirCmd = "rm -rf /root/".$userDir."/";
-  $shellCmdRes = $sshClient->exec($rmDirCmd);
-
-  /*
-   * Creating the directory which will store all the scripts, xml and csv files.
-   */
-  $createDirCmd = "mkdir /root/".$userDir."/";
-  $shellCmdRes = $sshClient->exec($createDirCmd);
-  $chmodUserDirCmd = "chmod -R 777 /root/".$userDir."/";
-  $shellCmdRes = $sshClient->exec($chmodUserDirCmd);
-
-  /*
-   * Create the scenario file.
-   */
-  $createScenarioCmd = "touch /root/".$userDir."scenario.xml";
-  $shellCmdRes = $sshClient->exec($createScenarioCmd);
-
-  /*
-   * Create the user file for resgister.
-   */
-  $createUserCmd = "touch /root/".$userDir."userForReg.csv";
-  $shellCmdRes = $sshClient->exec($createUserCmd);
-
-  /*
-   * Create the user file for calls.
-   */
-  $createUserCmd = "touch /root/".$userDir."userForCall.csv";
-  $shellCmdRes = $sshClient->exec($createUserCmd);
-}
-else
-{
-  if(!file_exists($userDir))
-  {
-    mkdir($userDir, 0777);
-  }
-}
-
-/*
- * Setting global values in session cookies for 1 day.
- */
-if(!isset($_COOKIE["nickname"]))
-  setcookie("nickname", $nickname, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["LOC"]))
-  setcookie("LOC", $location, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["NWRK"]))
-  setcookie("NWRK", $network, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["PCSCFIP"]))
-  setcookie("PCSCFIP", $pcscfIp, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["ICSCFIP"]))
-  setcookie("ICSCFIP", $icscfIp, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["SBCIP"]))
-  setcookie("SBCIP", $sbcIp, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["PCSCFIPU"]))
-  setcookie("PCSCFIPU", $borderUser, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["PCSCFIPP"]))
-  setcookie("PCSCFIPP", $borderUser, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["SBCIPU"]))
-  setcookie("SBCIPU", $borderUser, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["SBCIPP"]))
-  setcookie("SBCIPP", $borderPassword, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["EIP"]))
-  setcookie("EIP", $clientIp, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["EIPU"]))
-  setcookie("EIPU", $clientUser, time() + (86400 * 30), "/");
-if(!isset($_COOKIE["EIPP"]))
-  setcookie("EIPP", $clientPassword, time() + (86400 * 30), "/");
-
-/*
-  list($user, $pid, $shellCmdRes) = preg_split('/\s+/', $shellCmdRes);
-  echo "PID: ".$pid."<br>";
-
-  if(strlen($pid) > 0)
-  {
-    $topCmd = "top -n 1 -p ".$pid." | grep 'cdotsi'";
-    echo $topCmd."<br>";
-    $shellCmdRes = $ssh->exec($topCmd);
-    echo "Command output: ".$shellCmdRes."<br>";
+    $menu = $_GET['menu'];
+    echo '<div id = "topPane">
+          </div>';
   }
   else
   {
-    echo "Process not running.<br>";
+    exit("Server error");
   }
 
-  $sippCmd = "/root/INVITE_LOAD_TEST/inv_s/sipp 192.168.137.42 -sf /root/INVITE_LOAD_TEST/inv_s/uas_register.xml -inf /root/INVITE_LOAD_TEST/inv_s/uas_user.csv -i 192.168.137.43 -p 5080 -m 1 -trace_counts -bg";
-  $shellCmdRes = $ssh->exec($sippCmd);
-  echo $shellCmdRes;
-*/
-?-->
+  if(isset($_GET['submenu']))
+  {
+    $submenu = $_GET['submenu'];
+  }
+
+  $usersList = "";
+  $borderip = "";
+  $clientip = "";
+
+  if(isset($_COOKIE['BORDERIP']))
+  {
+    $borderip = $_COOKIE['BORDERIP'];
+  }
+  if(isset($_COOKIE['EIP']))
+  {
+    $clientip = $_COOKIE['EIP'];
+  }
+?>
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Load Tester</title>
-  <h1> Basic Call Testing </h1>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js">
-  </script>
-  <script type = "text/javascript" src = "JS/jquery.min.js">
-  </script>
-  <style>
-    p.msgs 
-    {
-      font-size: 20px;
-      border: 2px solid #00000063;
-      background-color: #9e9e9e47;
-      padding: 10px 5px 10px 10px;
-    }
+  <head>
+    <title>Load Tester</title>
+    <link rel = "stylesheet" href = "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link href = "https://use.fontawesome.com/releases/v5.0.8/css/all.css" rel = "stylesheet">
+    <link href = "CSS/style.css" type = "text/css" rel = "stylesheet">
+  </head>
 
-    div#origInvResp 
-    {
-      font-size: 20px;
-    }
-  </style>
-</head>
+  <body>
+    
 
-<body>
-  <!-- User Details -->
-  <p>Enter User Details:</p>
-  <div id = 'userDetails'>
-    <div class = 'users'>
-      <p>Username : <input type = 'number'   class = "unames" placeholder = 'Enter user name here'></p>
-      <p>Password : <input type = 'password' class = "pass" placeholder = 'Enter password here'></p>
+    <div id = "bottomPane">
+      <div id  = "bottomLeftPane">
+        <div id = "menuPane">
+          <?php
+            if($menu === "cases")
+            {
+              echo '<div id = "optionMenu" class = "menus active">
+                      TEST CASES
+                    </div>';
+            }
+            else
+            {
+              echo '<div id = "optionMenu">
+                      TEST CASES
+                    </div>';
+            }
+            if($menu === "scenarios")
+            {
+              echo '<div id = "scenarioMenu" class = "menus active">
+                      SCENARIOS
+                    </div>';
+              if($submenu === "reg")
+              {
+                echo '<div id = "regEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                      </div>';
+              }
+              else if($submenu === "basiccall")
+              {
+                echo '<div id = "basicCallEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                        <div id = "termEndUserOpt">TERMINATING</div>
+                      </div>';
+              }
+              else if($submenu === "ivrscall")
+              {
+                echo '<div id = "ivrsCallEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                      </div>';
+              }
+              else if($submenu === "xfer")
+              {
+                echo '<div id = "xferCallEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                        <div id = "midEndUserOpt">TRANSFERER</div>
+                        <div id = "termEndUserOpt">TERMINATING</div>
+                      </div>';
+              }
+              else if($submenu === "msg")
+              {
+                echo '<div id = "msgEndPoints" class = "endPoints">
+                        <div id = "origEndUserOpt">ORIGINATING</div>
+                        <div id = "termEndUserOpt">TERMINATING</div>
+                      </div>';
+              }
+            }
+            else
+            {
+              echo '<div id = "scenarioMenu">
+                      SCENARIOS
+                    </div>';
+            }
+            if($menu === "users")
+            {
+              echo '<div id = "userMenu" class = "menus active">
+                      USERS
+                    </div>';
+            }
+            else
+            {
+              echo '<div id = "userMenu">
+                      USERS
+                    </div>';
+            }
+            if($menu === "run")
+            {
+              echo '<div id = "runMenu" class = "menus active">
+                      RUN
+                    </div>';
+            }
+            else
+            {
+              echo '<div id = "runMenu">
+                      RUN
+                    </div>';
+            }
+          ?>          
+        </div>
+      </div>
+      <div id = "bottomRightPane">
+        <?php
+          if($menu === "cases")
+          {
+            echo '
+                  <div id = "callOptions">
+                    <div id = "reg">
+                      REGISTRATION
+                    </div>
+
+                    <div id = "basicCall">
+                      BASIC CALL
+                    </div>
+
+                    <div id = "ivrsCall">
+                      IVRS CALL
+                    </div>
+
+                    <div id = "xferCall">
+                      TRANSFER
+                    </div>
+
+                    <div id = "msg">
+                      MESSAGE
+                    </div>
+                  </div>';
+          }
+          else if($menu === "scenarios")
+          {
+            echo '<div id = "scenarioOptions">';
+            if($submenu === "reg")
+            {
+              echo '<div id = "regScenario">';
+                $scenarioFile = fopen($userDir . "reg_scenario.xml", "r") or die("Unable to open file!");
+                $sendTag = 0;
+                $recvTag = 0;
+
+                while(!feof($scenarioFile))
+                {
+                  $line = fgets($scenarioFile);
+                  if(strlen($line) == 1)
+                    continue;
+                  if(substr($line, 0, 1) === "<")
+                  {
+                    if(strpos($line, "<send") !== FALSE)
+                    {
+                      $sendTag = 1;
+                      if($recvTag == 1)
+                      {
+                        echo '</div>';
+                        $recvTag = 0;
+                      }
+                      echo '<div class = "origRegRqst">';
+                    }
+                    else if(strpos($line, "</send") !== FALSE)
+                    {
+                      $sendTag = 0;
+                      echo '</div>';
+                      echo '<p>* [field#] will be read from CSV file</p>';
+                      echo '<div id = "newHeaderAdd">
+                              <label>New Header</label><br>
+                              <input type = "text" class = "userHeaderField" value = "" placeholder = "Field Name">
+                              &nbsp;&nbsp;&nbsp;&nbsp;<b>:</b>&nbsp;&nbsp;&nbsp;&nbsp;
+                              <input type = "text" class = "userHeaderValue" value = "" placeholder = "Field Value">
+                              &nbsp;&nbsp;&nbsp;&nbsp;
+                              <input type = "button" class = "addUserHeaderToMsg" value = "ADD">
+                            </div>';
+                    }
+                    else if(strpos($line, "<recv") !== FALSE)
+                    {
+                      if($recvTag == 0)
+                      {
+                        echo '<div class = "origRegResp">';
+                        $recvTag = 1;
+                      }
+                      
+                      if(strpos($line, "403") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg403resp" value = "403 Forbidden" checked = "checked"  class = "respInput">
+                              <label for = "reg403resp" class = "respLabel">403 Forbidden</label>';
+                      }
+                      else if(strpos($line, "503") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg503resp" value = "503 Service Unavailable" checked = "checked"  class = "respInput">
+                              <label for = "reg503resp" class = "respLabel">503 Service Unavailable</label>';
+                      }
+                      else if(strpos($line, "401") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg401resp" value = "401 Unauthorized" checked = "checked" onclick = "return false;" class = "respInput">
+                              <label for = "reg401resp" class = "respLabel">401 Unauthorized</label>';
+                      }
+                      else if(strpos($line, "200") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg200resp" checked = "checked" onclick = "return false;" class = "respInput">
+                              <label for = "reg200resp" class = "respLabel">200 OK</label>';
+                      }
+                    }
+                    else if(strpos($line, "<!--recv") !== FALSE)
+                    {
+                      if($recvTag == 0)
+                      {
+                        echo '<div class = "origRegResp">';
+                        $recvTag = 1;
+                      }
+                      
+                      if(strpos($line, "403") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg403resp" value = "403 Forbidden" class = "respInput">
+                              <label for = "reg403resp" class = "respLabel">403 Forbidden</label>';
+                      }
+                      else if(strpos($line, "503") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg503resp" value = "503 Service Unavailable" class = "respInput">
+                              <label for = "reg503resp" class = "respLabel">503 Service Unavailable</label>';
+                      }
+                    }
+                    if(strpos($line, "</recv") !== FALSE)
+                    {
+                      if($recvTag == 1)
+                      {
+                        echo '</div>';
+                        $recvTag = 0;
+                      }
+                    }
+                    continue;
+                  }
+                  else if(substr($line, 0, 1) === ']' || 
+                          substr($line, 0, 1) === '\n' || 
+                          substr($line, 0, 1) === '\r' || 
+                          substr($line, 0, 1) === ' ')
+                    continue;
+                  else
+                  {
+                    $line = str_replace("<", "&lt;", $line);
+                    $line = str_replace(">", "&gt;", $line);
+                  }
+                  if($sendTag == 1)
+                  {
+                    if(strpos($line, "Contact") !== FALSE)
+                    {
+                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires"><br>';
+                    }
+                    else
+                    {
+                      echo $line."<br>";
+                    }
+                  }
+                }
+                fclose($scenarioFile);
+                echo '<input type = "button" id = "scenarioGen" value = "GENERATE">';
+              echo '</div>';
+            }
+            echo '</div>';
+          }
+          else if($menu === "users")
+          {
+            if($submenu === "reg")
+            {
+              echo '<div class = "container" id = "users">';
+                echo '<br>';
+                echo '<h2>Users</h2>';
+                echo '<div id = "userDetails">';
+                  echo '<div class = "users" id = "users_0">';
+                    echo '<label id = "userLabel"> Username </label>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <label id = "passLabel"> Password </label>
+                    <br>
+                    <input type = "number" class = "uname" value = "">
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <input type = "password" class = "pass" value = "">';
+                  echo '</div>';
+              echo '</div>';
+              echo '<br>
+              <div id = "addUserMsg">
+                  <input type = "checkbox" id = "userRange">
+                  <label for = "userRange">Check this to add range of users</label>
+              </div>
+              <div id = "userCtrl">
+                  <i id = "addUser" class="fa fa-plus fa-1x" aria-hidden="true" style = "cursor: pointer;">&nbsp;Add User</i>
+                  <br><br><input type = "button" id = "generateCsv" value = "Generate">
+              </div>
+              <br>';
+              echo '<table class="table">
+                      <thead>
+                        <tr>
+                            <th>UserName</th>
+                            <th>AuthHeader</th>
+                            <th>LocalIP</th>
+                            <th>LocalPort</th>
+                            <th>Server</th>
+                        </tr>
+                      </thead>
+                      <tbody id = "userDataBody">';
+                      $userFile = fopen($userDir . "reg_user.csv", "r") or die("Unable to open file!");
+                      $i = 0;
+                      $usersList = "";
+                      while(!feof($userFile))
+                      {
+                        $line = fgets($userFile);
+                        if(strlen($line) < 10)
+                          continue;
+
+                        if(strncmp($line, "SEQUENTIAL", 10) == 0)
+                        {
+                          $usersList = "SEQUENTIALbr";
+                          continue;
+                        }
+
+                        $cols = explode(";", $line);
+                        echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)">';
+                        foreach ($cols as $col)
+                        {
+                          echo '<td>' . $col . '</td>';
+                          $usersList .= $col . ";";
+                        }
+                        $usersList = substr_replace($usersList, "br", -2);
+                        echo '</tr>';
+                        $i += 1;
+                      }
+                      fclose($userFile);
+                echo '</tbody>
+                    </table>';
+              echo '</div>';
+            }
+          }
+          ?>
+      </div>
     </div>
-    <div class = 'users' id = 'users'>
-      <p>Username : <input type = 'number'   class = "unames" placeholder = 'Enter user name here'></p>
-      <p>Password : <input type = 'password' class = "pass" placeholder = 'Enter password here'></p>
-    </div>
-  </div>
-  <input type = 'button' id = 'addUser' value = 'Add User'>
-  <div id = 'addUserMsg'>
-    <p>* You can also provide range of users or add individually</p>
-    <input type = 'checkbox' id = 'uerRange'>
-    <label for = 'userRange'>Check this to add range of users</label>
-  </div>
-  <br><input type = "button" id = "generateCsv" value = "Generate">
 
-  <!-- Scenarios -->
-  <p><b>Originating Scenario</b></p>
-  <div id = "origScenario">
-    <p id = "origInvMsg" class = "msgs">
-    INVITE sip:[field5]@[field4] SIP/2.0<br>
-    Via: SIP/2.0/UDP [field2]:[field3];branch=[branch]<br>
-    From: [field0] &lt;sip:[field0]@[field4]&gt;;tag=[call_number]<br>
-    To: &lt;sip:[field5]@[field4]&gt;<br>
-    Call-ID: [call_id]<br>
-    CSeq: 1 INVITE<br>
-    Contact: sip:[field0]@[field2]:[field3]<br>
-    Max-Forwards: 70<br>
-    Subject: Performance Test<br>
-    Content-Type: application/sdp<br>
-    Content-Length: [len]<br>
-    </p>
-    <label>Add your header if any</label><br>
-    <input type = "text" id = "userHeaderFieldInv" placeholder = "User header filed name">
-    :
-    <input type = "text" id = "userHeaderValueInv" placeholder = "User header value">
-    <input type = "button" id = "addUserHeader2InvMsg" value = "ADD">
-    <p id = "origInvMsgSDP" class = "msgs">
-    v=0<br>
-    o=sipp 53655765 1 IN IP4 [field2]<br>
-    s=-<br>
-    c=IN IP[media_ip_type] [media_ip]<br>
-    t=0 0<br>
-    m=audio [media_port] RTP/AVP 8 101<br>
-    a=rtpmap:8 PCMA/8000<br>
-    a=rtpmap:101 telephone-event/8000<br>
-    a=fmtp:101 0-15<br>
-    a=ptime:20<br>
-    </p>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script>
+      var scenarioSeleted = "";
+      var submenu = '<?php if(isset($_GET['submenu'])) echo $submenu; ?>';
+      var menu = '<?php echo $menu; ?>';
+      var userList = "";
 
-    <div id = "origInvResp">
-      <input type = 'checkbox' id = '100resp'>
-      <label for = '100resp'>Response 100</label><br>
+      $(document).ready(function(){
+        if(submenu.localeCompare("reg") == 0)
+        {
+          $('#regEndPoints').show("slow");
+        }
+        else if(submenu.localeCompare("basiccall") == 0)
+        {
+          $('#basicCallEndPoints').show("slow");
+        }
+        else if(submenu.localeCompare("ivrscall") == 0)
+        {
+          $('#ivrsCallEndPoints').show("slow");
+        }
+        else if(submenu.localeCompare("xfer") == 0)
+        {
+          $('#xferCallEndPoints').show("slow");
+        }
+        else if(submenu.localeCompare("msg") == 0)
+        {
+          $('#msgEndPoints').show("slow");
+        }
 
-      <input type = 'checkbox' id = '180resp'>
-      <label for = '180resp'>Response 180</label><br>
+        if(menu.localeCompare("users") == 0)
+        {
+          userList = '<?php echo $usersList; ?>';
+          //userList = userList.replace(/br/g, "\n");
+          console.log("CSV: " + userList);
+        }
+      });
 
-      <input type = 'checkbox' id = '183resp'>
-      <label for = '183resp'>Response 183</label><br>
+      $('.addUserHeaderToMsg').click(function(){
+          var obj = $(this).prev();
+          var val = obj.val();
+          obj.val('');
+          obj = obj.prev().prev();
+          var fld = obj.val();
+          obj.val('');
+          if(val.length == 0 ||
+             fld.length == 0)
+          {
+            alert("Fields cannot be empty.");
+            return false;
+          }
+          obj = $(this).parent().prev().prev();
+          obj.append("<div class = 'newRqstHdr' ondblclick='removeNewRqstHdr(this)'>" + fld + ":" + val + "</div>");
+      });
 
-      <input type = 'checkbox' id = '400resp'>
-      <label for = '400resp'>Response 400</label><br>
-
-      <input type = 'checkbox' id = '403resp'>
-      <label for = '403resp'>Response 403</label><br>
-
-      <input type = 'checkbox' id = '408resp'>
-      <label for = '408resp'>Response 408</label><br>
-
-      <input type = 'checkbox' id = '481resp'>
-      <label for = '481resp'>Response 481</label><br>
-
-      <input type = 'checkbox' id = '487resp'>
-      <label for = '487resp'>Response 487</label><br>
-
-      <input type = 'checkbox' id = '500resp'>
-      <label for = '500resp'>Response 500</label><br>
-
-      <input type = 'checkbox' id = '503resp'>
-      <label for = '503resp'>Response 503</label><br>
-
-      <input type = 'checkbox' id = '200resp' checked = "checked" onclick = "return false;">
-      <label for = '200resp'>Response 200</label>
-    </div>
-
-    <p id = "origAckMsg" class = "msgs">
-    ACK sip:[field5]@[field4] SIP/2.0<br>
-    Via: SIP/2.0/UDP [field2]:[field3];branch=[branch]<br>
-    From: [field0] &lt;sip:[field0]@[field4]&gt;;tag=[call_number]<br>
-    To: &lt;sip:[field5]@[field4]&gt;[peer_tag_param]<br>
-    Call-ID: [call_id]<br>
-    CSeq: 1 ACK<br>
-    Contact: sip:[field0]@[field2]:[field3]<br>
-    Max-Forwards: 70<br>
-    Subject: Performance Test<br>
-    Content-Length: 0<br>
-    </p>
-    <label>Add your header if any</label><br>
-    <input type = "text" id = "userHeaderFieldAck" placeholder = "User header filed name">
-    :
-    <input type = "text" id = "userHeaderValueAck" placeholder = "User header value">
-    <input type = "button" id = "addUserHeader2AckMsg" value = "ADD"><br>
-
-    <input type = 'checkbox' id = 'rtpSession'>
-    <label for = 'rtpSession'>Check to allow RTP session</label><br>
-
-    <p id = "origByeMsg" class = "msgs">
-    BYE sip:[field5]@[field4] SIP/2.0<br>
-    Via: SIP/2.0/UDP [field2]:[field3];branch=[branch]<br>
-    From: [field0] &lt;sip:[field0]@[field4]&gt;;tag=[call_number]<br>
-    To: &lt;sip:[field5]@[field4]&gt;[peer_tag_param]<br>
-    Call-ID: [call_id]<br>
-    CSeq: 2 BYE<br>
-    Contact: sip:[field0]@[field2]:[field3]<br>
-    Max-Forwards: 70<br>
-    Subject: Performance Test<br>
-    Content-Length: 0<br>
-    </p>
-    <label>Add your header if any</label><br>
-    <input type = "text" id = "userHeaderFieldBye" placeholder = "User header filed name">
-    :
-    <input type = "text" id = "userHeaderValueBye" placeholder = "User header value">
-    <input type = "button" id = "addUserHeader2ByeMsg" value = "ADD"><br>
-
-    <input type = 'checkbox' id = 'bye200resp' checked = "checked" onclick = "return false;">
-    <label for = 'bye200resp'>BYE</label>
-
-
-  </div>
-  <p>Terminating Scenario</p>
-  <input type = 'button' id = 'submitScenario' value = 'Submit'>
-
-  <script type = "text/javascript">
-    $('input[id=addUser]').click(function () {
-      
-      usersCnt = $("div[class*='users']").length;
-      $("#users").append("<div class = 'users' id = 'users'>\
-                            <p class = 'userDel' onclick = 'removeUserAdd(this)' style = 'cursor:pointer;'>R</p>\
-                            <p>Username : <input type = 'number'   ng-model = 'username' placeholder = 'Enter user name here'></p>\
-                            <p>Password : <input type = 'password' ng-model = 'password' placeholder = 'Enter password here'></p>\
-                          </div>");
-                          
-      usersCnt += 1;
-
-      if(usersCnt > 2)
+      function removeNewRqstHdr(obj)
       {
-        $("#addUserMsg").hide();
+        obj.remove();
       }
-    });
 
-    function removeUserAdd(obj)
-    {
-      obj.parentNode.remove();
-      usersCnt = $("div[class*='users']").length;
-      if(usersCnt == 2)
-      {
-        $("#addUserMsg").show("slow");
-      }
-    }
+      $('#optionMenu').click(function() {
+        window.location.href = "connect.php?menu=cases";
+      });
+      $('#scenarioMenu').click(function() {
+        if(submenu.localeCompare("") != 0)
+        {
+          if(menu.localeCompare("scenarios") == 0)
+          {
+            location.reload();
+          }
+          else
+          {
+            window.location.href = "connect.php?menu=scenarios&submenu=" + submenu;
+          }
+        }
+        else
+        {
+          alert("Select a test case first.");
+        }
+      });
+      $('#userMenu').click(function() {
+        if(submenu.localeCompare("") != 0)
+        {
+          if(menu.localeCompare("users") == 0)
+          {
+            location.reload();
+          }
+          else
+          {
+            window.location.href = "connect.php?menu=users&submenu=" + submenu;
+          }
+        }
+        else
+        {
+          alert("Select a test case first.");
+        }
+      });
+      $('#runMenu').click(function() {
+        if(submenu.localeCompare("") != 0)
+        {
+          if(menu.localeCompare("run") == 0)
+          {
+            location.reload();
+          }
+          else
+          {
+            window.location.href = "connect.php?menu=run&submenu=" + submenu;
+          }
+        }
+        else
+        {
+          alert("Select a test case first.");
+        }
+      });
 
-    $('input[id=generateCsv]').click(function() {
-      usersCnt = $("input[class*='unames']").length;
-      users = "";
-      pass  = "";
-      for(i = 0;i < (usersCnt - 1);i++)
-      {
-        users += document.getElementsByClassName("unames")[i].value + ";";
-        pass  += document.getElementsByClassName("pass")[i].value + ";";
-      }
-      users += document.getElementsByClassName("unames")[i].value;
-      pass  += document.getElementsByClassName("pass")[i].value;
-      alert(users+","+pass);
+      $('i[id=addUser]').click(function () {
 
-      $.ajax({
-          url: 'generateFiles.php',
-          type: 'POST',
-          dataType: 'JSON',
-          data: {
-            U: users,
-            P: pass
-          },
-          success: function(result, status){
-              alert(result+","+status);
-          },
-          error: function(status, error) {
-            alert(status+","+error);
+          var usersCnt = $("div[class*='users']").length;
+          $("#userDetails").append('<div class = "users" id = "users_' + usersCnt + '">\
+                                      <br>\
+                                      <i onclick = "removeUserAdded(this)" style = "cursor:pointer;" class="fa fa-times" aria-hidden="true"></i><br>\
+                                      <label id = "userLabel"> Username </label>\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      <label id = "passLabel"> Password </label>\
+                                      <br>\
+                                      <input type = "number" class = "uname" value = "">\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+                                      <input type = "password" class = "pass" value = "">\
+                                      </div>');
+                      
+          usersCnt += 1;
+
+          if(usersCnt = 2)
+          {
+            $("#addUserMsg").show("slow");
+          }
+          else
+          {
+            $("#addUserMsg").hide();
+            document.getElementById("userRange").checked = false;
           }
       });
 
-      return false;
-    });
+      function removeUserAdded(obj)
+      {
+          var id = obj.parentNode.id;
+          obj.parentNode.remove();
+          usersCnt = $("div[class*='users']").length;
+          if(usersCnt == 2)
+          {
+              $("#addUserMsg").show("slow");
+          }
+          else
+          {
+            $("#addUserMsg").hide();
+            document.getElementById("userRange").checked = false;
+          }
+      }
 
-    $('input[id=addUserHeader2InvMsg]').click(function() {
-      field = $('#userHeaderFieldInv').val();
-      value = $('#userHeaderValueInv').val();
-      console.log(field+","+value);
-      $('#origInvMsg').append(field + ": " + value + "<br>");
-    });
+      function removeUserRow(obj)
+      {
+        var text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
+        var port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
+        console.log(port_number);
+        console.log(text);
+        userList = userList.replace(text, "");
+        console.log(userList);
 
-    $('input[id=addUserHeader2AckMsg]').click(function() {
-      field = $('#userHeaderFieldAck').val();
-      value = $('#userHeaderValueAck').val();
-      console.log(field+","+value);
-      $('#origAckMsg').append(field + ": " + value + "<br>");
-    });
+        $.ajax({
+              url: 'removeUserFromCsv.php',
+              type: 'POST',
+              data: {
+                  UL: userList,
+                  PN: port_number
+              },
+              success: function(result, status){
+                  alert(result+","+status);
+                  location.reload();
+              },
+              error: function(status, error) {
+                  alert(status+","+error);
+              }
+          });
+          
+      }
 
-    $('input[id=addUserHeader2ByeMsg]').click(function() {
-      field = $('#userHeaderFieldBye').val();
-      value = $('#userHeaderValueBye').val();
-      console.log(field+","+value);
-      $('#origByeMsg').append(field + ": " + value + "<br>");
-    });
+      $('input[id=generateCsv]').click(function() {
+          
+          var usersCnt = $("input[class*='uname']").length;
+          var U, P, U1, U2;
+          var userRange = false;
+          var lip = '<?php echo $clientip; ?>';
+          var lp = 'pr';
+          var server = '<?php echo $borderip; ?>';
+          var tempUsersList = "";
+          var portReq = 1;
 
-    $('input[id=submitScenario]').click(function () {
-      headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
-                 "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
+          if(document.getElementById("userRange") != null)
+            userRange = document.getElementById("userRange").checked;
+
+          $('#userDataBody').empty();
+
+          if(userRange == true)
+          {
+            U1 = document.getElementsByClassName("uname")[0].value;
+            U2 = document.getElementsByClassName("uname")[1].value;
+            P = document.getElementsByClassName("pass")[0].value;
+
+            if(U1.length == 0 ||
+               U2.length == 0 ||
+               P.length == 0)
+            {
+              alert("Fields cannot be empty");
+              return false;
+            }
+            for(var i = U1, j = 0; i < U2;i++,j++)
+            {
+              tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+            }
+            tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+          }
+          else
+          {
+            for(var i = 0;i < (usersCnt - 1);i++)
+            {
+              U = document.getElementsByClassName("uname")[i].value;
+              P = document.getElementsByClassName("pass")[i].value;
+              if(U.length == 0 ||
+                 P.length == 0)
+              {
+                alert("Fields cannot be empty");
+                return false;
+              }
+              tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+            }
+            U = document.getElementsByClassName("uname")[i].value;
+            P = document.getElementsByClassName("pass")[i].value;
+            if(U.length == 0 ||
+               P.length == 0)
+            {
+              alert("Fields cannot be empty");
+              return false;
+            }
+            tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+          }
+
+          userList += tempUsersList;
+          alert(userList);
+
+          $.ajax({
+              url: 'generateUserCsv.php',
+              type: 'POST',
+              data: {
+                  UL: userList,
+                  PR: portReq
+              },
+              success: function(result, status){
+                  alert(result+","+status);
+                  location.reload();
+              },
+              error: function(status, error) {
+                  alert(status+","+error);
+              }
+          });
+
+          return false;
+      });
+
+      $('#reg').click(function(){
+          window.location.href = "connect.php?menu=scenarios&submenu=reg";
+      });
+      $('#basicCall').click(function(){
+        window.location.href = "connect.php?menu=scenarios&submenu=basiccall";
+      });
+      $('#ivrsCall').click(function(){
+        window.location.href = "connect.php?menu=scenarios&submenu=ivrscall";
+      });
+      $('#xferCall').click(function(){
+        window.location.href = "connect.php?menu=scenarios&submenu=xfer";
+      });
+      $('#msg').click(function(){
+        window.location.href = "connect.php?menu=scenarios&submenu=msg";
+      });
+
+      $('#scenarioGen').click(function(){
+        if(submenu.localeCompare("reg") == 0)
+        {
+          genRegScenario();
+        }
+      });
+
+      function genRegScenario()
+      {
+        var headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
+                   "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
       
-      scenarioName = "<scenario name = 'Basic Sipstone UAC'>\n";
-      scenarioNameEnd = "</scenario>\n";
+        var scenarioName = "<scenario name = 'Register Load Test'>\n";
+        var scenarioNameEnd = "</scenario>\n";
 
-      sndTagStart = "<send>\n";
-      sndTagEnd = "</send>\n";
-      rcvTagStart = "<recv>\n";
-      rcvTagEnd = "</recv>\n";
+        var sndTagStart = "<send>\n";
+        var sndTagEnd = "</send>\n";
+        var rcvTagStart = "<recv>\n";
+        var rcvTagEnd = "</recv>\n";
 
-      dataTagStart = "<![CDATA[\n";
-      dataTagEnd = "\n]]>\n";
+        var dataTagStart = "<![CDATA[\n\n";
+        var dataTagEnd = "\n]]>\n";
 
-      invMsg = $('#origInvMsg').text();
-      invSdp = $('#origInvMsgSDP').text();
-      invResp = "\n";
-      if(document.getElementById('100resp').checked == true)
-      {
-        invResp += "<recv response = '100' optional = 'true'></recv>\n\n";
-      }
-      if(document.getElementById('180resp').checked == true)
-      {
-        invResp += "<recv response = '180' optional = 'true'></recv>\n\n";
-      }
-      if(document.getElementById('183resp').checked == true)
-      {
-        invResp += "<recv response = '183' optional = 'true'></recv>\n\n";
-      }
-      if(document.getElementById('400resp').checked == true)
-      {
-        invResp += "<recv response = '400' optional = 'true' next = '1'></recv>\n\n";
-      }
-      if(document.getElementById('403resp').checked == true)
-      {
-        invResp += "<recv response = '403' optional = 'true' next = '1'></recv>\n\n";
-      }
-      if(document.getElementById('408resp').checked == true)
-      {
-        invResp += "<recv response = '408' optional = 'true' next = '1'></recv>\n\n";
-      }
-      if(document.getElementById('481resp').checked == true)
-      {
-        invResp += "<recv response = '481' optional = 'true' next = '1'></recv>\n\n";
-      }
-      if(document.getElementById('487resp').checked == true)
-      {
-        invResp += "<recv response = '487' optional = 'true' next = '1'></recv>\n\n";
-      }
-      if(document.getElementById('500resp').checked == true)
-      {
-        invResp += "<recv response = '500' optional = 'true' next = '1'></recv>\n\n";
-      }
-      if(document.getElementById('503resp').checked == true)
-      {
-        invResp += "<recv response = '503' optional = 'true' next = '1'></recv>\n\n";
+        var label = 0;
+        var resp = 1;
+
+        var scenario = "";
+
+        scenario = headLine +
+                   scenarioName;
+
+        $('#regScenario').children().each(function () {
+          if(this.className.localeCompare("origRegRqst") == 0)
+          {
+            var rqst = $(this).text();
+            var expireVal = $(this).find('.regExpires').val();
+            rqst = rqst.replace("expires=", "expires=" + expireVal + "\n");
+            scenario += sndTagStart +
+                        dataTagStart +
+                        rqst +
+                        dataTagEnd +
+                        sndTagEnd;
+          }
+          else if(this.className.localeCompare("origRegResp") == 0)
+          {
+            if(this.firstChild.checked == true &&
+               this.firstChild.id.localeCompare("reg403resp") == 0 &&
+               resp == 1)
+            {
+              scenario += "<recv response = '403' optional = 'true' next = '1'>\n</recv>\n\n";
+              label = 1;
+            }
+            else if(this.firstChild.checked == false &&
+                    this.firstChild.id.localeCompare("reg403resp") == 0 &&
+                    resp == 1)
+            {
+              scenario += "<!--recv response = '403' optional = 'true' next = '1'>\n</recv-->\n\n";
+            }
+
+            if(this.firstChild.checked == true &&
+              this.firstChild.id.localeCompare("reg503resp") == 0 &&
+              resp == 1)
+            {
+              scenario += "<recv response = '503' optional = 'true' next = '1'>\n</recv>\n\n";
+              label = 1;
+            }
+            else if(this.firstChild.checked == false &&
+              this.firstChild.id.localeCompare("reg503resp") == 0 &&
+              resp == 1)
+            {
+              scenario += "<!--recv response = '503' optional = 'true' next = '1'>\n</recv-->\n\n";
+            }
+
+            if(this.firstChild.checked == true &&
+                    this.firstChild.id.localeCompare("reg401resp") == 0 &&
+                    resp == 1)
+            {
+              scenario += "<recv response = '401' auth = 'true'>\n</recv>\n\n";
+              resp = 2;
+            }
+            else if(this.firstChild.checked == true &&
+                    this.firstChild.id.localeCompare("reg200resp") == 0 &&
+                    resp == 2)
+            {
+              scenario += "<recv response = '200' crlf = 'true'>\n</recv>\n\n";
+              resp = 1;
+              if(label > 0)
+              {
+                scenario += "<label id='" + label + "'/>\n";
+              }
+            }
+          }
+        });
+        scenario += scenarioNameEnd;
+        console.log(scenario);
+        /*
+        $.ajax({
+          url: 'generateRegScenario.php',
+          type: 'POST',
+          data: {
+              S: scenario
+          },
+          success: function(result, status){
+              alert(result+","+status);
+              location.reload();
+          },
+          error: function(status, error) {
+              alert(status+","+error);
+          }
+        });*/
       }
 
-      invResp += "<recv response = '200' rtd = 'true'></recv>\n\n";
-
-      ackMsg = $('#origAckMsg').text();
-
-      rtpMsg = "\n";
-      if(document.getElementById("rtpSession").checked == true)
-      {
-        rtpMsg += "<nop>\n<action>\n<exec rtp_stream = 'test_5sec.wav' />\n</action>\n</nop>\n\n";
-      }
-
-      callDuration = "<pause milliseconds = '55000'/>\n\n"
-
-      byeMsg = $('#origByeMsg').text();
-      byeResp = "\n<recv response = '200' crlf = 'true'>\n</recv>\n\n"
-
-      origScenario = headLine +
-                     scenarioName +
-                     sndTagStart +
-                     dataTagStart +
-                     invMsg +
-                     invSdp +
-                     dataTagEnd +
-                     sndTagEnd +
-                     invResp +
-                     sndTagStart +
-                     dataTagStart +
-                     ackMsg +
-                     dataTagEnd +
-                     sndTagEnd +
-                     rtpMsg +
-                     callDuration +
-                     sndTagStart +
-                     dataTagStart +
-                     byeMsg +
-                     dataTagEnd +
-                     sndTagEnd +
-                     byeResp +
-                     scenarioNameEnd;
-      console.log(origScenario);
-
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
