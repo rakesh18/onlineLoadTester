@@ -19,8 +19,8 @@
   $clientIp          = "";
   $clientUsername    = "";
   $clientPassword    = "";
-  $resp->statusFlag  = "1";
-  $resp->message     = "Success";
+  $resp              = array("statusFlag" => "1", 
+                         "message" => "Success");
 
   $userName       = $_POST["userName"];
   $projectName    = $_POST["projectName"];
@@ -55,57 +55,15 @@
   if(!isset($_COOKIE["borderPassword"]))
     setcookie("borderPassword", $borderPassword, time() + (86400 * 30), "/");
 
-  $userDir = $uerName."_".$projectName."_load/";
+  $userDir = $userName."_".$projectName."_load/";
 
-  if($network === "ims")
+  if(file_exists("projects/".$location."/" . $userDir))
   {
-    /*
-    $sshPCSCF = new Net_SSH2($borderIp);
-    if (!$sshPCSCF->login($borderUsername, $borderPassword)) 
-    {
-      $resp->message    = "Server connect failure";
-      $resp->statusFlag = "0";
-      echo $resp;
-      exit(1);
-    }
-
-    $procIdCmd = "ps -ef | grep cdotpsi";
-    $shellCmdRes = $sshPCSCF->exec($procIdCmd);
-    
-    if(strpos($shellCmdRes, "cdotpsi") === FALSE ||
-      strpos($shellCmdRes, "locationalias") === FALSE)
-    {
-      $resp->message    = "Border server not running. Please contact the server team for the issue.";
-      $resp->statusFlag = "0";
-      echo $resp;
-      exit(1);
-    }
-    */
-  }
-  else
-  {
-    /*
-    $sshSBC = new Net_SSH2($borderIp);
-    if (!$sshSBC->login($borderUsername, $borderPassword)) 
-    {
-      $resp->message    = "Server connect failure";
-      $resp->statusFlag = "0";
-      echo $resp;
-      exit(1);
-    }
-
-    $procIdCmd = "ps -ef | grep cdotsi";
-    $shellCmdRes = $sshSBC->exec($procIdCmd);
-    
-    if(strpos($shellCmdRes, "cdotsi") === FALSE ||
-      strpos($shellCmdRes, "locationalias") === FALSE)
-    {
-      $resp->message    = "Border server not running. Please contact the server team for the issue.";
-      $resp->statusFlag = "0";
-      echo $resp;
-      exit(1);
-    }
-    */
+    $resp["message"] = "Project for this user already exist.\nDo you wish to use this or create your own?";
+    $resp["statusFlag"] = "0";
+    $serverResp = json_encode($resp);
+    echo $serverResp;
+    exit(1);
   }
   
   if($location === "external")
@@ -114,9 +72,10 @@
     $sshClient = new Net_SSH2($clientIp);
     if (!$sshClient->login($clientUsername, $clientPassword)) 
     {
-      $resp->message    = "Server connect failure";
-      $resp->statusFlag = "0";
-      echo $resp;
+      $resp["message"]    = "Server connect failure";
+      $resp["statusFlag"] = "0";
+      $serverResp = json_encode($resp);
+      echo $serverResp;
       exit(1);
     }
 
@@ -143,9 +102,10 @@
   $conn = new mysqli($server, $user, $pass, $db);
   if($conn->connect_error)
   {
-    $resp->message    = "Could not conect to database";
-    $resp->statusFlag = "0";
-    echo $resp;
+    $resp["message"]    = "Could not conect to database";
+    $resp["statusFlag"] = "0";
+    $serverResp = json_encode($resp);
+    echo $serverResp;
     exit(1);
   }
 
@@ -171,9 +131,10 @@
     $sql = "create table " . $newTableName . "(port_number int primary key, user varchar(50), state varchar(100));"; 
     if($conn->query($sql) === FALSE)
     {
-      $resp->message    = "Table create error: ".$conn->error;
-      $resp->statusFlag = "0";
-      echo $resp;
+      $resp["message"]    = "Table create error: ".$conn->error;
+      $resp["statusFlag"] = "0";
+      $serverResp = json_encode($resp);
+      echo $serverResp;
       $conn->close();
       exit(1);
     }
@@ -186,9 +147,10 @@
 
     if ($conn->multi_query($sql) === FALSE)
     {
-      $resp->message    = "Data insert error: ".$conn->error;
-      $resp->statusFlag = "0";
-      echo $resp;
+      $resp["message"]    = "Data insert error: ".$conn->error;
+      $resp["statusFlag"] = "0";
+      $serverResp = json_encode($resp);
+      echo $serverResp;
       $conn->close();
       exit(1);
     }
@@ -196,15 +158,13 @@
     $conn->close();
   }
   
-  if(!file_exists("projects/" . $userDir))
+  mkdir("projects/".$location."/".$userDir, 0777);
+  $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
+  foreach ($files as $f)
   {
-    mkdir("projects/".$userDir, 0777);
-    $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
-    foreach ($files as $f)
-    {
-      copy('defaultScenarios/'.$f, 'projects/'.$userDir.$f);
-    }
+    copy('defaultScenarios/'.$f, 'projects/'.$location."/".$userDir.$f);
   }  
   
-  echo $resp;
+  $serverResp = json_encode($resp);
+  echo $serverResp;
 ?>

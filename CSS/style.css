@@ -193,6 +193,7 @@ div#bottomRightPane {
     background-color: rgb(227, 238, 227);
     margin-left: 15.3%;
     overflow-y: auto;
+    overflow-x: auto;
     border-radius: 5px;
 }
 
@@ -398,4 +399,24 @@ h3.tagHeaders {
 
 div#errUsers {
     display: none;
+}
+
+th#msgTagsHead {
+    padding: 5px 20px 5px 20px; 
+    font-size: 20px; 
+    font-family: "Font Awesome\ 5 Free";
+}
+
+div.msgTagsNameValueRqst {
+    padding: 5px 5px 5px 5px; 
+    border: 1px solid rgb(233, 134, 134); 
+    background-color: rgb(233, 134, 134); 
+    border-radius: 10px;
+}
+
+div.msgTagsNameValueResp {
+    padding: 5px 5px 5px 5px; 
+    border: 1px solid rgb(175, 95, 95); 
+    background-color: rgb(175, 95, 95); 
+    border-radius: 10px;
 }

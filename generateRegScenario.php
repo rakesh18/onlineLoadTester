@@ -3,43 +3,41 @@
 
   include('Net/SSH2.php');
 
-  $scenario       = $_POST['S'];
-  $projname       = $_COOKIE["projctName"];
-  $uname          = $_COOKIE["userName"];
-  $clientIp       = $_COOKIE["EIP"];
-  $clientUser     = $_COOKIE["EIPU"];
-  $clientPassword = $_COOKIE["EIPP"];
-  $location       = $_COOKIE["LOC"];
+  $scenario          = $_POST['S'];
+  $projectName       = $_COOKIE["projectName"];
+  $userName          = $_COOKIE["userName"];
+  $clientIp          = $_COOKIE["clientIp"];
+  $clientUsername    = $_COOKIE["clientUsername"];
+  $clientPassword    = $_COOKIE["clientPassword"];
+  $location          = $_COOKIE["location"];
+  $resp               = array("statusFlag" => "1", 
+                              "message" => "Scenario generated successfully");
 
-  $userDir = $uname."_".$projname."_load/";
+  $userDir = $userName."_".$projectName."_load/";
 
-  $userFile = fopen("projects/".$userDir . "reg_scenario.xml", "w") or die("Unable to open file!");
+  $userFile = fopen("projects/".$location."/".$userDir . "reg_scenario.xml", "w") or die("Unable to open file!");
 
-  //if($location === "ext")
+  /*
+  if($location === "external")
   {    
-    /*
     $sshClient = new Net_SSH2($clientIp);
-    if (!$sshClient->login($clientUser, $clientPassword)) 
+    if (!$sshClient->login($clientUsername, $clientPassword)) 
     {
-      echo "Login Failed";
-      exit('Login Failed');
+      $resp["message"]    = "Login Failed to Client";
+      $resp["statusFlag"] = "0";
+      $serverResp = json_encode($resp);
+      echo $serverResp;
+      exit(1);
     }
 
-    $userCsvCmd = "echo '".$userList."' > /root/".$userDir."userForReg.csv";
+    $userCsvCmd = "echo '".$scenario."' > /root/".$userDir."reg_scenario.xml";
     $shellCmdRes = $sshClient->exec($userCsvCmd);
-    */
-    fwrite($userFile, $scenario);
-    fclose($userFile);
-    
-    echo "Scenario created successfully";
-  }
-  /*
-  else
-  {
-    fwrite($userFile, $scenario);
-    fclose($userFile);
-    
-    echo "CSV created successfully";
   }
   */
+
+  fwrite($userFile, $scenario);
+  fclose($userFile);
+
+  $serverResp = json_encode($resp);
+  echo $serverResp;
 ?>

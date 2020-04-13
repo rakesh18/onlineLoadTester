@@ -42,7 +42,7 @@
             <label class = "col-md-4 control-label" >Project Name</label> 
               <div class = "col-md-4 inputGroupContainer">
               <div class = "input-group">
-            <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+            <span class = "input-group-addon"><i class = "glyphicon glyphicon-file"></i></span>
             <input name = "projectName" placeholder = "Project Name" class = "form-control" type = "text">
               </div>
             </div>
@@ -111,7 +111,7 @@
               <div class = "col-md-4 inputGroupContainer">
               <div class = "input-group">
             <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
-            <input name = "borderIp" placeholder = "Border IP" class = "form-control" type = "text">
+            <input name = "borderIp" placeholder = "IP of SBC/PCSCF" class = "form-control" type = "text">
               </div>
             </div>
           </div>
@@ -121,7 +121,7 @@
               <div class = "col-md-4 inputGroupContainer">
               <div class = "input-group">
             <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
-            <input name = "networkIp" placeholder = "Network IP" class = "form-control" type = "text">
+            <input name = "networkIp" placeholder = "IP of ICSCF" class = "form-control" type = "text">
               </div>
             </div>
           </div>
@@ -149,7 +149,7 @@
           <div class="form-group">
             <label class="col-md-4 control-label"></label>
             <div class="col-md-4"><br>
-              &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<button type="submit" class="btn btn-warning" >&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspSUBMIT <span class="glyphicon glyphicon-send"></span>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</button>
+              <center><button type="submit" class="btn btn-warning" >SUBMIT <span class="glyphicon glyphicon-send"></span></button></center>
             </div>
           </div>
 
@@ -163,54 +163,6 @@
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap-validator/0.4.5/js/bootstrapvalidator.min.js'></script>
     <script type = "text/javascript">
-      /*
-      $('#validate').click(function(){
-        var uname = $('#uname').val();
-        var projctName = $('#projname').val();
-        var loc = $("input[name='LOC']:checked").val();
-        var eip = $('#extIp').val();
-        var eu = $('#extIpU').val();
-        var ep = $('#extIpP').val();
-        var nwk = $("input[name='NWRK']:checked").val();
-        var pip = $('#pcscfIp').val();
-        var iip = $('#icscfIp').val();
-        var pu = $('#pcscfIpU').val();
-        var pp = $('#pcscfIpP').val();
-        var sip = $('#sbcIp').val();
-        var su = $('#sbcIpU').val();
-        var sp = $('#sbcIpP').val();
-
-        $.ajax({
-          url: 'validateAndCreate.php',
-          type: 'POST',
-          dataType: 'JSON',
-          data: {
-              UNAME: uname,
-              PNAME: projctName,
-              LOC: loc,
-              NWRK: nwk,
-              PCSCFIP: pip,
-              PCSCFIPU: pu,
-              PCSCFIPP: pp,
-              ICSCFIP: iip,
-              SBCIP: sip,
-              SBCIPU: su,
-              SBCIPP: sp,
-              EIP: eip,
-              EIPU: eu,
-              EIPP: ep
-          },
-          success: function(result, status){
-              alert(result + " , " + status);
-              window.location.href = "connect.php?menu=cases";
-              window.location.replace("connect.php?menu=cases");
-          },
-          error: function(status, error) {
-              alert(status + " , " + error);
-          }
-        });
-      });
-      */
       $(document).ready(function() {
         $('#startForm').bootstrapValidator({
           feedbackIcons: {
@@ -327,12 +279,12 @@
       {
         if($('form').data('submitted') === true)
         {
-          alert("form alreday submitted");
+          //alert("form alreday submitted");
         }
         else
         {
           var form_data = new FormData(document.getElementById("startForm"));
-          alert("Sending form details...");
+          //alert("Sending form details...");
           $('form').data('submitted', true);
           $.ajax({
             url: "validateAndCreate.php",
@@ -340,10 +292,25 @@
             data: form_data,
             processData: false,
             contentType: false,
-            success: function(result, status){
-              alert(result + " , " + status);
-              //window.location.href = "connect.php?menu=cases";
-              //window.location.replace("connect.php?menu=cases");
+            success: function(result, status, xhr){
+              console.log(result + " , " + status);
+              var resp = JSON.parse(result);
+              console.log(resp);
+              console.log(resp.statusFlag);
+              if(resp.statusFlag.localeCompare("1") == 0)
+              {
+                window.location.href = "scenarios.php?menu=cases";
+                window.location.replace("scenarios.php?menu=cases");
+              }
+              else
+              {
+                var r = confirm(resp.message);
+                if (r == true) 
+                {
+                  window.location.href = "scenarios.php?menu=cases";
+                  window.location.replace("scenarios.php?menu=cases");
+                }
+              }
             },
             error: function(status, error) {
                 alert(status + " , " + error);
