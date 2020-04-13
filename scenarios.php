@@ -6,6 +6,7 @@
   $borderip  = "";
   $clientip  = "";
   $msgTags   = "";
+  $procId    = "";
 
   if(isset($_COOKIE["userName"]))
     $userName = $_COOKIE['userName'];
@@ -415,11 +416,15 @@
             }
             $tableName = str_replace(".", "_", $clientIp);
             $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
-            $sql   = "select * from load_status where user = '".$uname."' and status = 'running';";
+            $sql   = "select proc_id from load_status where user = '".$uname."' and status = 'running';";
             $result = $conn->query($sql);
 
             if($result->num_rows > 0) 
             {
+              while($row = $result->fetch_assoc()) 
+              {
+                $procId = $row['proc_id'];
+              }
               echo '<input type = "button" value = "STOP" id = "runLoad">';
             }
             else
@@ -442,6 +447,7 @@
       var userList = "";
       var msgTags = "";
       var statsUpdateTimer = "";
+      var pid = '<?php echo $procId; ?>';
 
       $(document).ready(function(){
         if(submenu.localeCompare("reg") == 0)
@@ -501,11 +507,11 @@
               var len = msg_tags[i].length;
               if(isNaN(parseInt(msg_tags[i])))
               {
-                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '" class = "msgTagsNameValueRqst">'+msg_tags[i]+'<br>0</div></center></th>';
+                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '_' + i + '" class = "msgTagsNameValueRqst">' + msg_tags[i] + '<br>0</div></center></th>';
               }
               else
               {
-                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '" class = "msgTagsNameValueResp">'+msg_tags[i]+'<br>0</div></center></th>';
+                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '_' + i + '" class = "msgTagsNameValueResp">' + msg_tags[i] + '<br>0</div></center></th>';
               }
             }
             row += '</tr></thead></table><br>';
@@ -922,14 +928,58 @@
           $.ajax({
               type: "POST",
               url: "getClientLoadStats.php",
+              data: {
+                PID: pid,
+                SM: submenu,
+                MT: msgTags
+              },
               success:function(data)
               {
                   console.log(data);
-                  document.getElementById("msgTags" + data).innerHTML = data + "<br>1";
-                  //Send another request in 5 seconds.
-                  statsUpdateTimer = setTimeout(function(){
-                                        updateClientLoadStats();
-                                     }, 5000);
+                  if(data[0] == '<')
+                  {
+                    console.log("Connection issue");
+                    statsUpdateTimer = setTimeout(function(){
+                                          updateClientLoadStats();
+                                      }, 5000);
+                    return false;
+                  }
+
+                  var resp = JSON.parse(data);
+                  console.log(resp);
+                  if(resp.statusFlag != null &&
+                     resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                    clearTimeout(statsUpdateTimer);
+                  }
+                  else
+                  {
+                    var runFlag = 1;
+                    for(keys in resp)
+                    {
+                      if(keys.localeCompare("statusFlag") == 0 &&
+                         resp[keys].localeCompare("OFF"))
+                      {
+                        runFlag = 0;
+                      }
+                      else
+                      {
+                        document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                      }
+                    }
+                    if(runFlag == 1)
+                    {
+                      statsUpdateTimer = setTimeout(function(){
+                                          updateClientLoadStats();
+                                      }, 5000);
+                    }
+                    else
+                    {
+                      clearTimeout(statsUpdateTimer);
+                      stopLoad();
+                    }
+                  }
               }
           });
       }
@@ -951,7 +1001,7 @@
                 else
                 {
                   $('#runLoad').attr('value', 'STOP');
-                  //updateClientLoadStats();
+                  updateClientLoadStats();
                   localStorage.setItem("runStatus", "running");
                 }
               }
@@ -976,7 +1026,9 @@
       $('#runLoad').click(function(){
         if($(this).val().localeCompare("RUN") == 0)
         {
-          startLoad();
+          //startLoad();
+          $('#runLoad').attr('value', 'STOP');
+          updateClientLoadStats();
         }
         else
         {
