@@ -13,11 +13,10 @@
   $resp               = array("statusFlag" => "1", 
                               "message" => "Scenario generated successfully");
 
-  $userDir = $userName."_".$projectName."_load/";
+  $userDir = $userName."_".$projectName."_load/reg/";
 
   $userFile = fopen("projects/".$location."/".$userDir . "reg_scenario.xml", "w") or die("Unable to open file!");
 
-  /*
   if($location === "external")
   {    
     $sshClient = new Net_SSH2($clientIp);
@@ -33,7 +32,6 @@
     $userCsvCmd = "echo '".$scenario."' > /root/".$userDir."reg_scenario.xml";
     $shellCmdRes = $sshClient->exec($userCsvCmd);
   }
-  */
 
   fwrite($userFile, $scenario);
   fclose($userFile);

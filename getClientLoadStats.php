@@ -10,15 +10,15 @@
     $userName          = $_COOKIE["userName"];
     $clientIp          = $_COOKIE["clientIp"];
     $clientUsername    = $_COOKIE["clientUsername"];
-    $clientPassword    = "hakunamatata";//$_COOKIE["clientPassword"];
+    $clientPassword    = $_COOKIE["clientPassword"];
     $location          = $_COOKIE["location"];
     $resp              = array();
     
-    $userDir           = $userName."_".$projectName."_load/";
+    $path = $userName."_".$projectName."_load/".$submenu."/";
 
     if($submenu === "reg")
     {
-        $clientStats       = "reg_scenario_".$processId."_counts.csv";
+        $clientStats       = $path."reg_scenario_*_counts.csv";
         
         if($location === "external")
         {    
@@ -43,14 +43,13 @@
             {
                 $resp["statusFlag"] = "OFF";  
             }
-            //$userCsvCmd = "tail -1 /root/".$userDir."/reg_scenario_".$processId."_counts.csv";
-            $userCsvCmd = "tail -1 /root/INVITE_LOAD_TEST/inv_s/uas_register_".$processId."_counts.csv";
+            $userCsvCmd = "tail -1 ".$clientStats;
             $shellCmdRes = $sshClient->exec($userCsvCmd);
             $res = explode(";", $shellCmdRes);
         }
         else
         {
-            $res = explode(";", exec("tail -1 reg_scenario_".$processId."_counts.csv"));
+            $res = explode(";", exec("tail -1 projects/inplace/".$clientStats));
         }
         
         $msgTags = explode(";", $msgTags);
@@ -58,7 +57,7 @@
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1)
         {
-            $resp[$msgTags[$j]."_".$j] = $res[$i];
+            $resp[$msgTags[$j]."_".$j] = $res[$i]."/".$res[$i + 3];
             if(is_numeric($msgTags[$j]))
             {
                 $i = $i + 4;

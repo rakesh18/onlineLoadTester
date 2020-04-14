@@ -3,10 +3,13 @@
   include('dbConfig.php');
   
   $usersList = "";
-  $borderip  = "";
-  $clientip  = "";
+  $borderIp  = "";
+  $clientIp  = "";
   $msgTags   = "";
   $procId    = "";
+  $origlp    = "";
+  $termlp    = "";
+  $submenu   = "";
 
   if(isset($_COOKIE["userName"]))
     $userName = $_COOKIE['userName'];
@@ -16,10 +19,8 @@
     $clientIp = $_COOKIE['clientIp'];
   if(isset($_COOKIE["location"]))
     $location = $_COOKIE['location'];
-  if(isset($_COOKIE['BORDERIP']))
-    $borderip = $_COOKIE['BORDERIP'];
-
-  $userDir = "projects/".$location."/".$userName."_".$projectName."_load/";
+  if(isset($_COOKIE['borderIp']))
+    $borderIp = $_COOKIE['borderIp'];
 
   if(isset($_GET['menu']))
   {
@@ -35,6 +36,7 @@
   {
     $submenu = $_GET['submenu'];
   }
+  $userDir = "projects/".$location."/".$userName."_".$projectName."_load/".$submenu."/";
 ?>
 <!DOCTYPE html>
 <html>
@@ -294,6 +296,22 @@
                 echo '<input type = "button" id = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
+            else if($submenu === "basiccall")
+            {
+
+            }
+            else if($submenu === "ivrscall")
+            {
+              
+            }
+            else if($submenu === "xfer")
+            {
+              
+            }
+            else if($submenu === "msg")
+            {
+              
+            }
             echo '</div>';
           }
           else if($menu === "users")
@@ -326,7 +344,7 @@
               echo '</div>';
               echo '<br>
               <div id = "addUserMsg">
-                  <input type = "checkbox" id = "userRange">
+                  <input type = "checkbox" id = "userRange" disabled = "disabled">
                   <label for = "userRange">Check this to add range of users</label>
               </div>
               <div id = "userCtrl">
@@ -366,6 +384,10 @@
                         {
                           echo '<td>' . $col . '</td>';
                           $usersList .= $col . ";";
+                          if(((int)$col) >= 50000 && ((int)$col) < 60000)
+                          {
+                            $origlp = $col;
+                          }
                         }
                         $usersList = substr_replace($usersList, "br", -2);
                         echo '</tr>';
@@ -376,38 +398,57 @@
                     </table>';
               echo '</div>';
             }
+            else if($submenu === "basiccall")
+            {
+
+            }
+            else if($submenu === "ivrscall")
+            {
+              
+            }
+            else if($submenu === "xfer")
+            {
+              
+            }
+            else if($submenu === "msg")
+            {
+              
+            }
           }
           else if($menu === "run")
           {
             if($submenu === "reg")
             {
               echo "<br><h2>&nbsp;&nbsp;Registration</h2><br>";
-              $userFile = "reg_user.csv";
-              $totalLines = intval(exec("wc -l '$userFile'"));
+              $userFile = $userDir."/reg_user.csv";
+              $totalLines = intval(exec("wc -l ".$userFile));
               if($totalLines < 3)
               {
-                //echo "<p>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</p>";
-                //  exit(1);
+                echo "<p>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</p>";
+                exit(1);
               }
 
               echo '<div id = "msg_tags" style = "height: 20%; margin-left: 20px; "></div><br><br>';
+
+
             }
-            if($submenu === "basiccall")
+            else if($submenu === "basiccall")
             {
               echo "<br><h2>&nbsp;&nbsp;Basic Call</h2><br>";
             }
-            if($submenu === "ivrscall")
+            elseif($submenu === "ivrscall")
             {
               echo "<br><h2>&nbsp;&nbsp;IVRS Call</h2><br>";
             }
-            if($submenu === "xfer")
+            else if($submenu === "xfer")
             {
               echo "<br><h2>&nbsp;&nbsp;Transfer</h2><br>";
             }
-            if($submenu === "msg")
+            else if($submenu === "msg")
             {
               echo "<br><h2>&nbsp;&nbsp;Message</h2><br>";
             }
+
             $conn = new mysqli($server, $user, $pass, $db);
             if($conn->connect_error)
             {
@@ -448,6 +489,8 @@
       var msgTags = "";
       var statsUpdateTimer = "";
       var pid = '<?php echo $procId; ?>';
+      var origlp = "<?php echo $origlp; ?>";
+      var termlp = "<?php echo $termlp; ?>";
 
       $(document).ready(function(){
         if(submenu.localeCompare("reg") == 0)
@@ -511,7 +554,7 @@
               }
               else
               {
-                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '_' + i + '" class = "msgTagsNameValueResp">' + msg_tags[i] + '<br>0</div></center></th>';
+                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '_' + i + '" class = "msgTagsNameValueResp">' + msg_tags[i] + '<br>0/0</div></center></th>';
               }
             }
             row += '</tr></thead></table><br>';
@@ -519,7 +562,7 @@
           }
           if($('#runLoad').val().localeCompare("STOP") == 0)
           {
-            //updateClientLoadStats();
+            updateClientLoadStats();
           }
         }
       });
@@ -616,6 +659,10 @@
       $('i[id=addUser]').click(function () {
 
           var usersCnt = $("div[class*='users']").length;
+          if(usersCnt == 2)
+          {
+            return false;
+          }
           $("#userDetails").append('<div class = "users" id = "users_' + usersCnt + '">\
                                       <br>\
                                       <i onclick = "removeUserAdded(this)" style = "cursor:pointer;" class="fa fa-times" aria-hidden="true"></i><br>\
@@ -640,14 +687,11 @@
                       
           usersCnt += 1;
 
-          if(usersCnt = 2)
+          if(usersCnt == 2)
           {
             $("#addUserMsg").show("slow");
-          }
-          else
-          {
-            $("#addUserMsg").hide();
-            document.getElementById("userRange").checked = false;
+            document.getElementById("userRange").checked = true;
+            document.getElementById("addUser").style.opacity = "0.1";
           }
       });
 
@@ -656,131 +700,175 @@
           var id = obj.parentNode.id;
           obj.parentNode.remove();
           usersCnt = $("div[class*='users']").length;
-          if(usersCnt == 2)
-          {
-              $("#addUserMsg").show("slow");
-          }
-          else
-          {
-            $("#addUserMsg").hide();
-            document.getElementById("userRange").checked = false;
-          }
+          $("#addUserMsg").hide();
+          document.getElementById("userRange").checked = false;
+          document.getElementById("addUser").style.opacity = "1";
       }
 
       function removeUserRow(obj)
       {
+        var r = confirm("Do you want to proceed?");
+        if (r == false) 
+        {
+          return false;
+        }
         var text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
         var port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
         console.log(port_number);
         console.log(text);
-        origUserList = userList;
         userList = userList.replace(text, "");
         console.log(userList);
 
-        $.ajax({
-              url: 'removeUserFromCsv.php',
-              type: 'POST',
-              data: {
-                  UL: userList,
-                  PN: port_number
-              },
-              success: function(result, status){
+        if(submenu.localeCompare("reg") == 0)
+        {
+          if(userList.length > 12)
+          {
+            $.ajax({
+                url: 'generateRegUserCsv.php',
+                type: 'POST',
+                data: {
+                    UL: userList,
+                    PR: "1"
+                },
+                success: function(result, status){
+                  console.log(result);
                   var resp = JSON.parse(result);
                   if(resp.statusFlag.localeCompare("0") == 0)
                   {
                     alert(resp.message);
                   }
+                  if(origlp.length == 0)
+                    origlp = resp.statusFlag;
                   location.reload();
-              },
-              error: function(status, error) {
-                  alert(status+","+error);
-              }
-          });
+                },
+                error: function(status, error) {
+                    alert(status+","+error);
+                }
+            });
+          }
+          else
+          {
+            $.ajax({
+                url: 'removeRegUserFromCsv.php',
+                type: 'POST',
+                data: {
+                    UL: userList,
+                    PN: port_number
+                },
+                success: function(result, status){
+                    var resp = JSON.parse(result);
+                    if(resp.statusFlag.localeCompare("0") == 0)
+                    {
+                      alert(resp.message);
+                    }
+                    location.reload();
+                },
+                error: function(status, error) {
+                    alert(status+","+error);
+                }
+            });
+          }
+        }
           
       }
 
       $('input[id=generateCsv]').click(function() {
-          
-          var usersCnt = $("input[class*='uname']").length;
-          var U, P, U1, U2;
-          var userRange = false;
-          var lip = '<?php echo $clientip; ?>';
-          var lp = 'pr';
-          var server = '<?php echo $borderip; ?>';
-          var tempUsersList = "";
-          var portReq = 1;
-
-          if(document.getElementById("userRange") != null)
-            userRange = document.getElementById("userRange").checked;
-
-          $('#userDataBody').empty();
-
-          if(userRange == true)
+          var r = confirm("Do you want to proceed?");
+          if (r == false) 
           {
-            U1 = document.getElementsByClassName("uname")[0].value;
-            U2 = document.getElementsByClassName("uname")[1].value;
-            P = document.getElementsByClassName("pass")[0].value;
+            return false;
+          }
+          if(submenu.localeCompare("reg") == 0)
+          {
+            var usersCnt = $("input[class*='uname']").length;
+            var U, P, U1, U2;
+            var userRange = false;
+            var lip = '<?php echo $clientIp; ?>';
+            var lp = "";
+            var server = '<?php echo $borderIp; ?>';
+            var tempUsersList = "";
+            var portReq = 1;
 
-            if(U1.length == 0 ||
-               U2.length == 0 ||
-               P.length == 0)
+            if(origlp.length == 0)
+              lp = "pr";
+            else
+              lp = origlp;
+
+            if(document.getElementById("userRange") != null)
+              userRange = document.getElementById("userRange").checked;
+
+            $('#userDataBody').empty();
+
+            if(userRange == true)
             {
-              alert("Fields cannot be empty");
-              return false;
-            }
-            for(var i = U1, j = 0; i < U2;i++,j++)
-            {
+              U1 = document.getElementsByClassName("uname")[0].value;
+              U2 = document.getElementsByClassName("uname")[1].value;
+              P = document.getElementsByClassName("pass")[0].value;
+
+              if(U1.length == 0 ||
+                U2.length == 0 ||
+                P.length == 0)
+              {
+                alert("Fields cannot be empty");
+                return false;
+              }
+              for(var i = U1, j = 0; i < U2;i++,j++)
+              {
+                tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+              }
               tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
             }
-            tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
-          }
-          else
-          {
-            for(var i = 0;i < (usersCnt - 1);i++)
+            else
             {
+              for(var i = 0;i < (usersCnt - 1);i++)
+              {
+                U = document.getElementsByClassName("uname")[i].value;
+                P = document.getElementsByClassName("pass")[i].value;
+                if(U.length == 0 ||
+                  P.length == 0)
+                {
+                  alert("Fields cannot be empty");
+                  return false;
+                }
+                tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+              }
               U = document.getElementsByClassName("uname")[i].value;
               P = document.getElementsByClassName("pass")[i].value;
               if(U.length == 0 ||
-                 P.length == 0)
+                P.length == 0)
               {
                 alert("Fields cannot be empty");
                 return false;
               }
               tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
             }
-            U = document.getElementsByClassName("uname")[i].value;
-            P = document.getElementsByClassName("pass")[i].value;
-            if(U.length == 0 ||
-               P.length == 0)
-            {
-              alert("Fields cannot be empty");
-              return false;
-            }
-            tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
-          }
 
-          userList += tempUsersList;
-          alert(userList);
-
-          $.ajax({
-              url: 'generateUserCsv.php',
-              type: 'POST',
-              data: {
-                  UL: userList,
-                  PR: portReq
-              },
-              success: function(result, status){
-                var resp = JSON.parse(result);
-                if(resp.statusFlag.localeCompare("0") == 0)
-                {
-                  alert(resp.message);
+            userList += tempUsersList;
+            console.log(userList);
+            
+            $.ajax({
+                url: 'generateRegUserCsv.php',
+                type: 'POST',
+                data: {
+                    UL: userList,
+                    PR: portReq
+                },
+                success: function(result, status){
+                  console.log(result);
+                  var resp = JSON.parse(result);
+                  if(resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                  }
+                  if(origlp.length == 0)
+                    origlp = resp.statusFlag;
+                  location.reload();
+                },
+                error: function(status, error) {
+                    alert(status+","+error);
                 }
-                location.reload();
-              },
-              error: function(status, error) {
-                  alert(status+","+error);
-              }
-          });
+            });
+          }
 
           return false;
       });
@@ -802,16 +890,36 @@
       });
 
       $('#scenarioGen').click(function(){
-        if(submenu.localeCompare("reg") == 0)
+        var r = confirm("Do you want to proceed?");
+        if (r == true) 
         {
-          genRegScenario();
+          if(submenu.localeCompare("reg") == 0)
+          {
+            genRegScenario();
+          }
+          else if(submenu.localeCompare("basiccall") == 0)
+          {
+            genBasicCallScenario();
+          }
+          else if(submenu.localeCompare("ivrscall") == 0)
+          {
+            genIvrsCallScenario();
+          }
+          else if(submenu.localeCompare("xfer") == 0)
+          {
+            genXferScenario();
+          }
+          else if(submenu.localeCompare("msg") == 0)
+          {
+            genMsgScenario();
+          } 
         }
       });
 
       function genRegScenario()
       {
         var headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
-                   "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
+                       "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
       
         var scenarioName = "<scenario name = 'Register Load Test'>\n";
         var scenarioNameEnd = "</scenario>\n";
@@ -853,7 +961,7 @@
                this.firstChild.id.localeCompare("reg403resp") == 0 &&
                resp == 1)
             {
-              scenario += "<recv response = '403' optional = 'true' next = '1'>\n</recv>\n\n";
+              scenario += "<recv response = \"403\" optional = \"true\" next = \"1\">\n</recv>\n\n";
               label = 1;
               msgTags += "403;";
             }
@@ -861,14 +969,14 @@
                     this.firstChild.id.localeCompare("reg403resp") == 0 &&
                     resp == 1)
             {
-              scenario += "<!--recv response = '403' optional = 'true' next = '1'>\n</recv-->\n\n";
+              scenario += "<!--recv response = \"403\" optional = \"true\" next = \"1\">\n</recv-->\n\n";
             }
 
             if(this.firstChild.checked == true &&
               this.firstChild.id.localeCompare("reg503resp") == 0 &&
               resp == 1)
             {
-              scenario += "<recv response = '503' optional = 'true' next = '1'>\n</recv>\n\n";
+              scenario += "<recv response = \"503\" optional = \"true\" next = \"1\">\n</recv>\n\n";
               label = 1;
               msgTags += "503;";
             }
@@ -876,14 +984,14 @@
               this.firstChild.id.localeCompare("reg503resp") == 0 &&
               resp == 1)
             {
-              scenario += "<!--recv response = '503' optional = 'true' next = '1'>\n</recv-->\n\n";
+              scenario += "<!--recv response = \"503\" optional = \"true\" next = \"1\">\n</recv-->\n\n";
             }
 
             if(this.firstChild.checked == true &&
                     this.firstChild.id.localeCompare("reg401resp") == 0 &&
                     resp == 1)
             {
-              scenario += "<recv response = '401' auth = 'true'>\n</recv>\n\n";
+              scenario += "<recv response = \"401\" auth = \"true\">\n</recv>\n\n";
               resp = 2;
               msgTags += "401;";
             }
@@ -891,7 +999,7 @@
                     this.firstChild.id.localeCompare("reg200resp") == 0 &&
                     resp == 2)
             {
-              scenario += "<recv response = '200' crlf = 'true'>\n</recv>\n\n";
+              scenario += "<recv response = \"200\" crlf = \"true\">\n</recv>\n\n";
               resp = 1;
               if(label > 0)
               {
@@ -903,7 +1011,7 @@
         });
         scenario += scenarioNameEnd;
         console.log(scenario);
-        /*
+        
         $.ajax({
           url: 'generateRegScenario.php',
           type: 'POST',
@@ -921,7 +1029,7 @@
           error: function(status, error) {
               alert(status+","+error);
           }
-        });*/
+        });
       }
 
       function updateClientLoadStats(){
@@ -959,11 +1067,11 @@
                     for(keys in resp)
                     {
                       if(keys.localeCompare("statusFlag") == 0 &&
-                         resp[keys].localeCompare("OFF"))
+                         resp[keys].localeCompare("OFF") == 0)
                       {
                         runFlag = 0;
                       }
-                      else
+                      else if(keys.localeCompare("statusFlag"))
                       {
                         document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
                       }
@@ -984,7 +1092,8 @@
           });
       }
 
-      function startLoad(){
+      function startLoad()
+      {
           $.ajax({
               type: "POST",
               url: "startLoadTesting.php",
@@ -993,22 +1102,41 @@
               },
               success:function(data)
               {
+                console.log(data);
+                //return false;
                 var resp = JSON.parse(data);
                 if(resp.statusFlag.localeCompare("0") == 0)
                 {
                   alert(resp.message);
                 }
+                else if(resp.statusFlag.localeCompare("2") == 0)
+                {
+                  for(keys in resp)
+                  {
+                    if(keys.localeCompare("statusFlag") == 0 ||
+                       keys.localeCompare("message") == 0)
+                    {
+                      continue;
+                    }
+                    else
+                    {
+                      document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                    }
+                  }
+                }
                 else
                 {
                   $('#runLoad').attr('value', 'STOP');
-                  updateClientLoadStats();
                   localStorage.setItem("runStatus", "running");
+                  pid = resp.procId;
+                  updateClientLoadStats();
                 }
               }
           });
       }
 
-      function stopLoad(){
+      function stopLoad()
+      {
           $.ajax({
               type: "POST",
               url: "stopLoadTesting.php",
@@ -1026,9 +1154,9 @@
       $('#runLoad').click(function(){
         if($(this).val().localeCompare("RUN") == 0)
         {
-          //startLoad();
-          $('#runLoad').attr('value', 'STOP');
-          updateClientLoadStats();
+          startLoad();
+          //$('#runLoad').attr('value', 'STOP');
+          //updateClientLoadStats();
         }
         else
         {

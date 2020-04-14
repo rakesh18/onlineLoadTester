@@ -34,71 +34,31 @@
   $borderUsername = $_POST["borderUsername"];
   $borderPassword = $_POST["borderPassword"];
 
-  if(!isset($_COOKIE["userName"]))
-    setcookie("userName", $userName, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["projectName"]))
-    setcookie("projectName", $projectName, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["location"]))
-    setcookie("location", $location, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["network"]))
-    setcookie("network", $network, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["clientUsername"]))
-    setcookie("clientUsername", $clientUsername, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["clientPassword"]))
-    setcookie("clientPassword", $clientPassword, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["borderIp"]))
-    setcookie("borderIp", $borderIp, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["networkIp"]))
-    setcookie("networkIp", $networkIp, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["borderUsername"]))
-    setcookie("borderUsername", $borderUsername, time() + (86400 * 30), "/");
-  if(!isset($_COOKIE["borderPassword"]))
-    setcookie("borderPassword", $borderPassword, time() + (86400 * 30), "/");
-
+  setcookie("userName", $userName, time() + (86400 * 30), "/");
+  setcookie("projectName", $projectName, time() + (86400 * 30), "/");
+  setcookie("location", $location, time() + (86400 * 30), "/");
+  setcookie("network", $network, time() + (86400 * 30), "/");
+  setcookie("clientUsername", $clientUsername, time() + (86400 * 30), "/");
+  setcookie("clientPassword", $clientPassword, time() + (86400 * 30), "/");
+  setcookie("borderIp", $borderIp, time() + (86400 * 30), "/");
+  setcookie("networkIp", $networkIp, time() + (86400 * 30), "/");
+  setcookie("borderUsername", $borderUsername, time() + (86400 * 30), "/");
+  setcookie("borderPassword", $borderPassword, time() + (86400 * 30), "/");
+  if($location === "inplace")
+    $clientIp = $systemIp;
+  setcookie("clientIp", $clientIp, time() + (86400 * 30), "/");
+  
   $userDir = $userName."_".$projectName."_load/";
 
   if(file_exists("projects/".$location."/" . $userDir))
   {
     $resp["message"] = "Project for this user already exist.\nDo you wish to use this or create your own?";
-    $resp["statusFlag"] = "0";
+    $resp["statusFlag"] = "2";
     $serverResp = json_encode($resp);
     echo $serverResp;
     exit(1);
   }
   
-  if($location === "external")
-  {
-    /*
-    $sshClient = new Net_SSH2($clientIp);
-    if (!$sshClient->login($clientUsername, $clientPassword)) 
-    {
-      $resp["message"]    = "Server connect failure";
-      $resp["statusFlag"] = "0";
-      $serverResp = json_encode($resp);
-      echo $serverResp;
-      exit(1);
-    }
-
-    $createDirCmd    = "mkdir /root/".$userDir."/";
-    $shellCmdRes     = $sshClient->exec($createDirCmd);
-    $chmodUserDirCmd = "chmod -R 777 /root/".$userDir."/";
-    $shellCmdRes     = $sshClient->exec($chmodUserDirCmd);
-
-    $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
-    foreach ($files as $f)
-    {
-      $createScenarioCmd = "touch /root/" . $userDir . $f";
-      $shellCmdRes = $sshClient->exec($createScenarioCmd);
-    }
-    */
-  }
-  else
-  {
-    $clientIp = $systemIp;
-  }
-  if(!isset($_COOKIE["clientIp"]))
-    setcookie("clientIp", $clientIp, time() + (86400 * 30), "/");
-
   $conn = new mysqli($server, $user, $pass, $db);
   if($conn->connect_error)
   {
@@ -140,7 +100,7 @@
     }
 
     $sql = "";
-    for($i = 6000; $i < 10000; $i++)
+    for($i = 50000; $i < 60000; $i++)
     {
       $sql .= "insert into " . $newTableName . "(port_number, user, state) values(" . $i . ", '', '');";
     }
@@ -157,13 +117,62 @@
 
     $conn->close();
   }
-  
+
+  if($location === "external")
+  {
+    $sshClient = new Net_SSH2($clientIp);
+    if (!$sshClient->login($clientUsername, $clientPassword)) 
+    {
+      $resp["message"]    = "Client connect failure";
+      $resp["statusFlag"] = "0";
+      $serverResp = json_encode($resp);
+      echo $serverResp;
+      exit(1);
+    }
+
+    $createDirCmd    = "mkdir /root/".$userDir."/";
+    $shellCmdRes     = $sshClient->exec($createDirCmd);
+    $chmodUserDirCmd = "chmod -R 777 /root/".$userDir."/";
+    $shellCmdRes     = $sshClient->exec($chmodUserDirCmd);
+
+    $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
+    foreach ($files as $f)
+    {
+      if(is_dir("defaultScenarios/".$f) === TRUE)
+      {
+        $createDirCmd    = "mkdir /root/".$userDir."/".$f;
+        $shellCmdRes     = $sshClient->exec($createDirCmd);
+        $chmodUserDirCmd = "chmod -R 777 /root/".$userDir."/".$f;
+        $shellCmdRes     = $sshClient->exec($chmodUserDirCmd);
+        $files2 = array_diff(scandir("defaultScenarios/".$f), array('.', '..'));
+        foreach ($files2 as $f2)
+        {
+          $fileContent = file_get_contents('defaultScenarios/'.$f.'/'.$f2);
+          $createScenarioCmd = "echo '".$fileContent."' > /root/".$userDir."/".$f."/".$f2;
+          $shellCmdRes = $sshClient->exec($createScenarioCmd);
+        }
+      }
+    }
+  }
+  else
+  {
+    $clientIp = $systemIp;
+  }
+
   mkdir("projects/".$location."/".$userDir, 0777);
   $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
   foreach ($files as $f)
   {
-    copy('defaultScenarios/'.$f, 'projects/'.$location."/".$userDir.$f);
-  }  
+    if(is_dir("defaultScenarios/".$f) === TRUE)
+    {
+      mkdir("projects/".$location."/".$userDir."/".$f, 0777);
+      $files2 = array_diff(scandir("defaultScenarios/".$f), array('.', '..'));
+      foreach ($files2 as $f2)
+      {
+        copy('defaultScenarios/'.$f."/".$f2, 'projects/'.$location."/".$userDir."/".$f."/".$f2);
+      }
+    }
+  }
   
   $serverResp = json_encode($resp);
   echo $serverResp;

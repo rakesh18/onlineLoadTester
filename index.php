@@ -14,6 +14,7 @@
     <style>
       div#clientDetails {
         display: none;
+        margin: 0px 0px 0px 0px;
       }
       div#networkIp {
         display: none;
@@ -24,7 +25,7 @@
   <body>
     <br>
     <div class = "container">
-      <form class = "well form-horizontal" action = "#" id = "startForm" onsubmit = "return submitForm();" method = "POST" enctype = "multipart/form-datam">
+      <form class = "well form-horizontal" action = "" id = "startForm" method = "POST" onsubmit = "submitForm()" enctype = "multipart/form-datam">
         <fieldset>
           <legend><center><h2><b>Welcome to Load Tester</b></h2></center></legend><br>
 
@@ -149,7 +150,7 @@
           <div class="form-group">
             <label class="col-md-4 control-label"></label>
             <div class="col-md-4"><br>
-              <center><button type="submit" class="btn btn-warning" >SUBMIT <span class="glyphicon glyphicon-send"></span></button></center>
+              <center><button type="submit" class="btn btn-warning">SUBMIT <span class="glyphicon glyphicon-send"></span></button></center>
             </div>
           </div>
 
@@ -294,15 +295,18 @@
             contentType: false,
             success: function(result, status, xhr){
               console.log(result + " , " + status);
+              if(result[0] == '<')
+              {
+                alert("Server error");
+                location.reload();
+              }
               var resp = JSON.parse(result);
-              console.log(resp);
-              console.log(resp.statusFlag);
               if(resp.statusFlag.localeCompare("1") == 0)
               {
                 window.location.href = "scenarios.php?menu=cases";
                 window.location.replace("scenarios.php?menu=cases");
               }
-              else
+              else if(resp.statusFlag.localeCompare("2") == 0)
               {
                 var r = confirm(resp.message);
                 if (r == true) 
@@ -310,10 +314,20 @@
                   window.location.href = "scenarios.php?menu=cases";
                   window.location.replace("scenarios.php?menu=cases");
                 }
+                else
+                {
+                  location.reload();
+                }
+              }
+              else
+              {
+                alert(resp.message);
+                location.reload();
               }
             },
             error: function(status, error) {
                 alert(status + " , " + error);
+                location.reload();
             }
           });
         }
