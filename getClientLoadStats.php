@@ -32,10 +32,8 @@
                 exit(1);
             }
 
-            $chckProc = "ps -ef | grep ".$processId;
-            $shellCmdRes = $sshClient->exec($chckProc);
-            //echo "<".$shellCmdRes;exit(1);
-            if(substr_count($shellCmdRes, $processId) > 2)
+            $checkProc = $ssh->exec("ps o pid= -p ".$procId);
+            if(strlen($checkProc) > 1)
             {
                 $resp["statusFlag"] = "ON"; 
             }
@@ -43,7 +41,7 @@
             {
                 $resp["statusFlag"] = "OFF";  
             }
-            $userCsvCmd = "tail -1 ".$clientStats;
+            $userCsvCmd = "tail -1 /root/".$clientStats;
             $shellCmdRes = $sshClient->exec($userCsvCmd);
             $res = explode(";", $shellCmdRes);
         }
@@ -70,5 +68,4 @@
     }
 
     echo json_encode($resp);
-
 ?>

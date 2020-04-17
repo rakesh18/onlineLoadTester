@@ -408,15 +408,17 @@ th#msgTagsHead {
 }
 
 div.msgTagsNameValueRqst {
-    padding: 5px 5px 5px 5px; 
+    padding: 20px 5px 5px 5px; 
     border: 1px solid rgb(233, 134, 134); 
     background-color: rgb(233, 134, 134); 
     border-radius: 10px;
+    height: 80px;
 }
 
 div.msgTagsNameValueResp {
-    padding: 5px 5px 5px 5px; 
+    padding: 20px 5px 5px 5px; 
     border: 1px solid rgb(175, 95, 95); 
     background-color: rgb(175, 95, 95); 
     border-radius: 10px;
+    height: 80px;
 }

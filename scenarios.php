@@ -19,6 +19,8 @@
     $clientIp = $_COOKIE['clientIp'];
   if(isset($_COOKIE["location"]))
     $location = $_COOKIE['location'];
+  if(isset($_COOKIE["network"]))
+    $network = $_COOKIE['network'];
   if(isset($_COOKIE['borderIp']))
     $borderIp = $_COOKIE['borderIp'];
 
@@ -44,12 +46,43 @@
     <title>Load Tester</title>
     <link rel = "stylesheet" href = "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <link href = "https://use.fontawesome.com/releases/v5.0.8/css/all.css" rel = "stylesheet">
+    <link href = "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel = "stylesheet">
     <link href = "CSS/style.css" type = "text/css" rel = "stylesheet">
+    <style>
+      div#runParameters {
+        border: 2px solid black;
+        border-radius: 10px;
+        margin-left: 40px;
+        padding: 10px 10px 10px 10px;
+        width: 290px;
+      }
+      input#load_rate {
+        padding: 5px 5px 5px 5px;
+        font-size: 20px;
+        border-radius: 5px;
+        width: 100px;
+      }
+      input#load_limit {
+        padding: 5px 5px 5px 5px;
+        font-size: 20px;
+        border-radius: 5px;
+        width: 100px;
+      }
+      input#runLoad {
+        border-radius: 6px;
+      }
+      input#pauseLoad {
+        border-radius: 6px;
+      }
+      div#serverStats {
+        margin-left: 40px;
+        width: 95%;
+        margin-bottom: 10px;
+      }
+    </style>
   </head>
 
   <body>
-    
-
     <div id = "bottomPane">
       <div id  = "bottomLeftPane">
         <div id = "menuPane">
@@ -449,30 +482,78 @@
               echo "<br><h2>&nbsp;&nbsp;Message</h2><br>";
             }
 
-            $conn = new mysqli($server, $user, $pass, $db);
-            if($conn->connect_error)
-            {
-                echo "Could not connect to database";
-                exit(1);
-            }
-            $tableName = str_replace(".", "_", $clientIp);
-            $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
-            $sql   = "select proc_id from load_status where user = '".$uname."' and status = 'running';";
-            $result = $conn->query($sql);
+            echo '<div id = "runParameters">';
+              echo '<div id = "loadRateParameter">';
+              echo '<label style = "font-size: 20px;"><b>Enter rate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</b></label><input type = "number" value = "1" id = "load_rate">';
+              echo '</div>';
+              echo '<br>';
+              echo '<div id = "loadLimitParameter">';
+              echo '<label style = "font-size: 20px;"><b>Enter run limit &nbsp:&nbsp;</b></label><input type = "number" value = "0" id = "load_limit"><br>';
+              echo '<label> * 0 for no max limit</label>';
+              echo '</div>';
+              echo '<br>';
 
-            if($result->num_rows > 0) 
-            {
-              while($row = $result->fetch_assoc()) 
+              $conn = new mysqli($server, $user, $pass, $db);
+              if($conn->connect_error)
               {
-                $procId = $row['proc_id'];
+                  echo "Could not connect to database";
+                  exit(1);
               }
-              echo '<input type = "button" value = "STOP" id = "runLoad">';
-            }
-            else
-            {
-              echo '<input type = "button" value = "RUN" id = "runLoad">';
-            }
-            $conn->close();
+              $tableName = str_replace(".", "_", $clientIp);
+              $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
+              $sql   = "select proc_id from load_status where user = '".$uname."' and status = 'running';";
+              $result = $conn->query($sql);
+
+              if($result->num_rows > 0) 
+              {
+                while($row = $result->fetch_assoc()) 
+                {
+                  $procId = $row['proc_id'];
+                }
+                echo '<input type = "button" value = "STOP" id = "runLoad">&nbsp;&nbsp;';
+                echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: block;" onclick = "controlLoad(\"P\")">';
+              }
+              else
+              {
+                echo '<input type = "button" value = "RUN" id = "runLoad">&nbsp;&nbsp;';
+                echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\"P\")">';
+              }
+              $conn->close();
+              echo '<div id = "controlParameters" style = "position: relative;margin-top: 20px;display: none;">';
+                echo '<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"+\")"></i>Increase by 1<br>';
+                echo '<i class="fa fa-arrow-circle-o-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"-\")"></i>Decrease by 1<br>';
+                echo '<i class="fa fa-arrow-circle-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"*\")"></i>Increase by 10<br>';
+                echo '<i class="fa fa-arrow-circle-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"\/\")"></i>Decrease by 10';
+              echo '</div>';
+            echo '</div>';
+
+            echo '<br>';
+            echo '<div id = "serverStats" style = "display: none;">';
+              echo '<label style="font-size: 25px;"><b>Server Statistics</b></label><br>';
+              if($network === "ims")
+              {
+
+              }
+              else
+              {
+                echo '<div id = "sbcsig">
+                        <label><b>SBC_SIG</b></label><br>
+                        <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;">
+                        <div id = "sbcSigUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;overflow-x: auto;"></div>
+                      </div>';
+                echo '<br><br>';
+                echo '<div id = "c5">
+                        <label><b>C5</b></label><br>
+                        <input type = "text" id = "c5Ip" value = "" placeholder = "Enter C5 IP" style = "border-radius: 5px;">&nbsp;&nbsp;
+                        <input type = "text" id = "c5Username" value = "" placeholder = "Enter C5 Username" style = "border-radius: 5px;">&nbsp;&nbsp;
+                        <input type = "password" id = "c5Password" value = "" placeholder = "Enter C5 Password" style = "border-radius: 5px;"><br><br>
+                        <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;"><br>
+                        <div id = "ngcpeUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div><br>
+                        <div id = "fsUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div><br>
+                        <div id = "msUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div>
+                      </div>';
+              }
+            echo '</div>';
           }
           ?>
       </div>
@@ -481,6 +562,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
     <script>
       var scenarioSeleted = "";
       var submenu = '<?php if(isset($_GET['submenu'])) echo $submenu; ?>';
@@ -488,9 +570,16 @@
       var userList = "";
       var msgTags = "";
       var statsUpdateTimer = "";
+      var sbcsigStatsTimer = "";
+      var ngcpeStatsTimer = "";
+      var fsStatsTimer = "";
+      var msStatsTimer = "";
       var pid = '<?php echo $procId; ?>';
       var origlp = "<?php echo $origlp; ?>";
       var termlp = "<?php echo $termlp; ?>";
+      var chartsbcsig, chartngcpe, chartfs, chartms;
+      var sbcsig_x = 0;
+      var network = '<?php echo $network; ?>';
 
       $(document).ready(function(){
         if(submenu.localeCompare("reg") == 0)
@@ -540,7 +629,7 @@
                 maxlen = len;
               }
             }
-            var width = (maxlen * 20) + 40;
+            var width = (maxlen * 20);
             var row = "";
             row += '<table class="table">';
             row += '<thead>';
@@ -559,6 +648,94 @@
             }
             row += '</tr></thead></table><br>';
             $('#msg_tags').append(row);
+            chartsbcsig = new CanvasJS.Chart("sbcSigUsage",
+            {
+              title:{
+              text: "SBC-SIG MEMORY & CPU USSAGE"
+              },
+              data: [
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 }
+                ]
+              },
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 }
+                ]
+              }
+              ]
+            });
+            chartngcpe = new CanvasJS.Chart("ngcpeUsage",
+            {
+              title:{
+              text: "NGCPE MEMORY & CPU USSAGE"
+              },
+              data: [
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 },
+                ]
+              },
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 }
+                ]
+              }
+              ]
+            });
+            chartfs = new CanvasJS.Chart("fsUsage",
+            {
+              title:{
+              text: "FS MEMORY & CPU USSAGE"
+              },
+              data: [
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 },
+                ]
+              },
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 }
+                ]
+              }
+              ]
+            });
+            chartms = new CanvasJS.Chart("msUsage",
+            {
+              title:{
+              text: "MS MEMORY & CPU USSAGE"
+              },
+              data: [
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 },
+                ]
+              },
+              {
+                type: "line",
+
+                dataPoints: [
+                { x: 0, y: 0.0 },
+                ]
+              }
+              ]
+            });
           }
           if($('#runLoad').val().localeCompare("STOP") == 0)
           {
@@ -566,6 +743,136 @@
           }
         }
       });
+
+      function renderCharts()
+      {
+        if(network.localeCompare("ims") == 0)
+        {
+
+        }
+        else
+        {
+          chartsbcsig.render();
+          chartngcpe.render();
+          chartfs.render();
+          chartms.render();
+        }
+      }
+
+      function controlLoad(val)
+      {
+        $.ajax({
+          type: "POST",
+          url: "controlLoad.php",
+          data: {
+            PAR: val,
+            SM: submenu
+          },
+          success:function(data)
+          {
+              console.log(data);
+              if(data[0] == '<')
+              {
+                console.log("Connection issue");
+                return false;
+              }
+
+              var resp = JSON.parse(data);
+              console.log(resp);
+              if(resp.statusFlag != null &&
+                  resp.statusFlag.localeCompare("0") == 0)
+              {
+                alert(resp.message);
+              }
+              else
+              {
+                if(val.localeCompare("+") == 0)
+                {
+
+                }
+                else if(val.localeCompare("+") == 0)
+                {
+                  
+                }
+                else if(val.localeCompare("+") == 0)
+                {
+                  
+                }
+                else if(val.localeCompare("+") == 0)
+                {
+                  
+                }
+                else if(val.localeCompare("+") == 0)
+                {
+                  
+                }
+              }
+          }
+        });
+        return false;
+      }
+
+      $('.showServerStats').click(function(){
+        //alert($(this).parent().attr('id'));
+        if($(this).parent().attr('id').localeCompare("sbcsig") == 0)
+        {
+          if($(this).attr('value').localeCompare("START") == 0)
+          {
+            sbcsigStatsShow(this);
+            $(this).attr('value', 'STOP');
+          }
+          else
+          {
+            clearTimeout(sbcsigStatsTimer);
+            $(this).attr('value', 'START');
+          }       
+        }
+      });
+
+      function sbcsigStatsShow(obj)
+      {
+          $.ajax({
+              type: "POST",
+              url: "getServerStats.php",
+              data: {
+                MODULE: "sbcsig"
+              },
+              success:function(data)
+              {
+                  console.log(data);
+                  if(data[0] == '<')
+                  {
+                    console.log("Connection issue");
+                    sbcsigStatsTimer = setTimeout(function(){
+                                          sbcsigStatsShow();
+                                      }, 3000);
+                    return false;
+                  }
+
+                  var resp = JSON.parse(data);
+                  console.log(resp);
+                  if(resp.statusFlag != null &&
+                     resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                    clearTimeout(sbcsigStatsTimer);
+                    obj.value = "START";
+                  }
+                  else
+                  {
+                    var mem = parseFloat(resp.mem);
+                    var cpu = parseFloat(resp.cpu);
+                    chartsbcsig.data[0].dataPoints.push({x: sbcsig_x, y: mem});
+                    chartsbcsig.data[1].dataPoints.push({x: sbcsig_x, y: cpu});
+                    chartsbcsig.render();
+                    sbcsig_x += 3;
+                    sbcsigStatsTimer = setTimeout(function(){
+                                          sbcsigStatsShow();
+                                    }, 3000);
+                  }
+              }
+          });
+      }
 
       $('.addUserHeaderToMsg').click(function(){
           var obj = $(this).prev();
@@ -1094,16 +1401,28 @@
 
       function startLoad()
       {
+        var loadRate = document.getElementById("load_rate").value;
+        var loadLimit = document.getElementById("load_limit").value;
           $.ajax({
               type: "POST",
               url: "startLoadTesting.php",
               data: {
-                SM: submenu
+                SM: submenu,
+                LR: loadRate,
+                LL: loadLimit
               },
               success:function(data)
               {
                 console.log(data);
                 //return false;
+                if(data[0] == '<')
+                {
+                  alert("Connection issue with the client");
+                  statsUpdateTimer = setTimeout(function(){
+                                        updateClientLoadStats();
+                                    }, 5000);
+                  return false;
+                }
                 var resp = JSON.parse(data);
                 if(resp.statusFlag.localeCompare("0") == 0)
                 {
@@ -1129,6 +1448,12 @@
                   $('#runLoad').attr('value', 'STOP');
                   localStorage.setItem("runStatus", "running");
                   pid = resp.procId;
+                  document.getElementById("load_rate").disabled = true;
+                  document.getElementById("load_limit").disabled = true;
+                  $('#controlParameters').show("show");
+                  $('#serverStats').show("slow");
+                  renderCharts();
+                  $('#pauseLoad').show("slow");
                   updateClientLoadStats();
                 }
               }
@@ -1145,8 +1470,20 @@
               },
               success:function(data)
               {
+                if(data[0] == '<')
+                {
+                  alert("Connection issue with the client");
+                  statsUpdateTimer = setTimeout(function(){
+                                        updateClientLoadStats();
+                                    }, 5000);
+                  return false;
+                }
                 $('#runLoad').attr('value', 'RUN');
                 localStorage.setItem("runStatus", "stopped");
+                $('#controlParameters').hide("show");
+                document.getElementById("load_rate").disabled = false;
+                document.getElementById("load_limit").disabled = false;
+                $('#pauseLoad').hide("slow");
               }
           });
       }
@@ -1154,14 +1491,26 @@
       $('#runLoad').click(function(){
         if($(this).val().localeCompare("RUN") == 0)
         {
-          startLoad();
-          //$('#runLoad').attr('value', 'STOP');
-          //updateClientLoadStats();
+          //startLoad();
+          $('#runLoad').attr('value', 'STOP');
+                  localStorage.setItem("runStatus", "running");
+                  document.getElementById("load_rate").disabled = true;
+                  document.getElementById("load_limit").disabled = true;
+                  $('#controlParameters').show("show");
+                  $('#serverStats').show("slow");
+                  $('#pauseLoad').show("slow");
+                  renderCharts();
         }
         else
         {
           clearTimeout(statsUpdateTimer);
-          stopLoad();
+          //stopLoad();
+          $('#runLoad').attr('value', 'RUN');
+                localStorage.setItem("runStatus", "stopped");
+                $('#controlParameters').hide("show");
+                document.getElementById("load_rate").disabled = false;
+                document.getElementById("load_limit").disabled = false;
+                $('#pauseLoad').hide("slow");
         }
         
       });
