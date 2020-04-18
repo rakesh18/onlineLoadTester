@@ -318,11 +318,13 @@ input.userHeaderField {
     font-size: 20px;
     border-radius: 5px;
     padding-left: 5px;
+    width: 200px;
 }
 input.userHeaderValue {
     font-size: 20px;
     border-radius: 5px;
     padding-left: 5px;
+    width: 500px;
 }
 input.addUserHeaderToMsg {
     font-size: 18px;

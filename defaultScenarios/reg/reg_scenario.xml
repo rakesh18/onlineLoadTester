@@ -25,6 +25,9 @@ User-Agent: sipp
 <recv response="503" optional="true" next = "1">
 </recv>
 
+<recv response="500" optional="true" next = "1">
+</recv>
+
 <recv response="401" auth="true">
 </recv>
 
@@ -45,6 +48,15 @@ User-Agent: sipp
 
 ]]>
 </send>
+
+<recv response="403" optional="true" next = "1">
+</recv>
+
+<recv response="503" optional="true" next = "1">
+</recv>
+
+<recv response="500" optional="true" next = "1">
+</recv>
 
 <recv response="200" crlf="true">
 </recv>

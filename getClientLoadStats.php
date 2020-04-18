@@ -18,7 +18,7 @@
 
     if($submenu === "reg")
     {
-        $clientStats       = $path."reg_scenario_*_counts.csv";
+        $clientStats       = $path.$submenu."_scenario_*_counts.csv";
         
         if($location === "external")
         {    
@@ -32,7 +32,7 @@
                 exit(1);
             }
 
-            $checkProc = $ssh->exec("ps o pid= -p ".$procId);
+            $checkProc = $sshClient->exec("ps o pid= -p ".$processId);
             if(strlen($checkProc) > 1)
             {
                 $resp["statusFlag"] = "ON"; 
@@ -55,13 +55,14 @@
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1)
         {
-            $resp[$msgTags[$j]."_".$j] = $res[$i]."/".$res[$i + 3];
             if(is_numeric($msgTags[$j]))
             {
+                $resp[$msgTags[$j]."_".$j] = $res[$i]."/".$res[$i + 3];
                 $i = $i + 4;
             }
             else
             {
+                $resp[$msgTags[$j]."_".$j] = $res[$i];
                 $i = $i + 2;
             }
         }

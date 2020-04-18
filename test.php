@@ -1,6 +1,7 @@
 <?php
 include 'Net/SSH2.php';
 
+/*
 $ssh = new Net_SSH2('192.168.137.43');
 if (!$ssh->login('root', 'hakunamatata')) {
     exit('Login Failed');
@@ -18,7 +19,7 @@ echo "PID: ".$procId."<br>";
 //to check whether sipp started sucessfully or not
 $procId = $ssh->exec("ps o pid= -p ".$procId);
 echo "Running... ".$procId;
-
+*/
 
 /*
 //to increase load by 1
@@ -41,4 +42,7 @@ $runCmd = "top -b -n 1 -p `ps o pid= -C cdotsi` | tail -2 | head -1 | awk '{prin
 $output = $ssh->exec($runCmd);
 echo $output;
 */
+
+$data = explode(";", file_get_contents("uas_register_3404_.csv"));
+echo $data[12].",".$data[15].",".$data[17];
 ?>

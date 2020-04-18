@@ -3,14 +3,14 @@
     include('dbConfig.php');
     include('Net/SSH2.php');
 
-    $parameter         = $_POST['PAR'];
+    $parameter      = $_POST['PAR'];
     $submenu        = $_POST["SM"];
     $projectName    = $_COOKIE["projectName"];
     $userName       = $_COOKIE["userName"];
-    $clientIp          = $_COOKIE["clientIp"];
-    $clientUsername    = $_COOKIE["clientUsername"];
-    $clientPassword    = $_COOKIE["clientPassword"];
-    $resp              = array();
+    $clientIp       = $_COOKIE["clientIp"];
+    $clientUsername = $_COOKIE["clientUsername"];
+    $clientPassword = $_COOKIE["clientPassword"];
+    $resp           = array();
 
     $ssh = new Net_SSH2($clientIp);
     if (!$ssh->login($clientUsername, $clientPassword)) 
@@ -26,7 +26,7 @@
     $runCmd = 'screen -S '.$screenName.' -p 0 -X stuff "'.$parameter.'^M"';
     $out = $ssh->exec($runCmd);
 
-    $resp["message"]    = "Success";
+    $resp["message"]    = $parameter;
     $resp["statusFlag"] = "1";
 
     echo json_encode($resp);

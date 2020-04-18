@@ -7,6 +7,7 @@
   $clientIp  = "";
   $msgTags   = "";
   $procId    = "";
+  $startTime = "";
   $origlp    = "";
   $termlp    = "";
   $submenu   = "";
@@ -54,7 +55,12 @@
         border-radius: 10px;
         margin-left: 40px;
         padding: 10px 10px 10px 10px;
+        width: 300px;
+      }
+      div#finalResult {
+        padding: 0px 10px 10px 10px;
         width: 290px;
+        display: block;
       }
       input#load_rate {
         padding: 5px 5px 5px 5px;
@@ -208,6 +214,7 @@
                 $scenarioFile = fopen($userDir . "reg_scenario.xml", "r") or die("Unable to open file!");
                 $sendTag = 0;
                 $recvTag = 0;
+                $startCustomField = 0;
 
                 while(!feof($scenarioFile))
                 {
@@ -261,6 +268,12 @@
                               <label for = "reg503resp" class = "respLabel">503 Service Unavailable</label>';
                         $msgTags .= "503;";
                       }
+                      else if(strpos($line, "500") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg500resp" value = "500 Server Internal Error" checked = "checked"  class = "respInput">
+                              <label for = "reg500resp" class = "respLabel">500 Server Internal Error</label>';
+                        $msgTags .= "500;";
+                      }
                       else if(strpos($line, "401") !== FALSE)
                       {
                         echo '<input type = "checkbox" id = "reg401resp" value = "401 Unauthorized" checked = "checked" onclick = "return false;" class = "respInput">
@@ -292,6 +305,11 @@
                         echo '<input type = "checkbox" id = "reg503resp" value = "503 Service Unavailable" class = "respInput">
                               <label for = "reg503resp" class = "respLabel">503 Service Unavailable</label>';
                       }
+                      else if(strpos($line, "500") !== FALSE)
+                      {
+                        echo '<input type = "checkbox" id = "reg500resp" value = "500 Server Internal Error" class = "respInput">
+                              <label for = "reg500resp" class = "respLabel">500 Server Internal Error</label>';
+                      }
                     }
                     if(strpos($line, "</recv") !== FALSE)
                     {
@@ -299,6 +317,7 @@
                       {
                         echo '</div>';
                         $recvTag = 0;
+                        $startCustomField = 0;
                       }
                     }
                     continue;
@@ -319,9 +338,21 @@
                     {
                       echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires"><br>';
                     }
-                    else
+                    else if(strpos($line, "User-Agent") !== FALSE)
                     {
                       echo $line."<br>";
+                      $startCustomField = 1;
+                    }
+                    else
+                    {
+                      if($startCustomField == 1)
+                      {
+                        echo "<div class = 'newRqstHdr' ondblclick='removeNewRqstHdr(this)'>".$line."</div>";
+                      }
+                      else
+                      {
+                        echo $line."<br>";
+                      }
                     }
                   }
                 }
@@ -482,52 +513,94 @@
               echo "<br><h2>&nbsp;&nbsp;Message</h2><br>";
             }
 
-            echo '<div id = "runParameters">';
-              echo '<div id = "loadRateParameter">';
-              echo '<label style = "font-size: 20px;"><b>Enter rate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</b></label><input type = "number" value = "1" id = "load_rate">';
-              echo '</div>';
-              echo '<br>';
-              echo '<div id = "loadLimitParameter">';
-              echo '<label style = "font-size: 20px;"><b>Enter run limit &nbsp:&nbsp;</b></label><input type = "number" value = "0" id = "load_limit"><br>';
-              echo '<label> * 0 for no max limit</label>';
-              echo '</div>';
-              echo '<br>';
+            echo '<div>';
+              echo '<table class = "table" style = "margin-top: -30px;"><thead><tr>';
+              echo '<th style = "width: 290px;font-family: Font Awesome\ 5 Free;">';
+              echo '<div id = "runParameters">';
+                echo '<div id = "loadRateParameter">';
+                  echo '<label style = "font-size: 20px;"><b>Enter rate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</b></label><input type = "number" value = "1" id = "load_rate">';
+                echo '</div>';
+                echo '<br>';
+                echo '<div id = "loadLimitParameter">';
+                  echo '<label style = "font-size: 20px;"><b>Enter run limit &nbsp;&nbsp:&nbsp&nbsp;</b></label><input type = "number" value = "0" id = "load_limit"><br>';
+                  echo '<label> * 0 for no max limit</label>';
+                echo '</div>';
+                echo '<br>';
 
-              $conn = new mysqli($server, $user, $pass, $db);
-              if($conn->connect_error)
-              {
-                  echo "Could not connect to database";
-                  exit(1);
-              }
-              $tableName = str_replace(".", "_", $clientIp);
-              $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
-              $sql   = "select proc_id from load_status where user = '".$uname."' and status = 'running';";
-              $result = $conn->query($sql);
-
-              if($result->num_rows > 0) 
-              {
-                while($row = $result->fetch_assoc()) 
+                $conn = new mysqli($server, $user, $pass, $db);
+                if($conn->connect_error)
                 {
-                  $procId = $row['proc_id'];
+                    echo "Could not connect to database";
+                    exit(1);
                 }
-                echo '<input type = "button" value = "STOP" id = "runLoad">&nbsp;&nbsp;';
-                echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: block;" onclick = "controlLoad(\"P\")">';
-              }
-              else
-              {
-                echo '<input type = "button" value = "RUN" id = "runLoad">&nbsp;&nbsp;';
-                echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\"P\")">';
-              }
-              $conn->close();
-              echo '<div id = "controlParameters" style = "position: relative;margin-top: 20px;display: none;">';
-                echo '<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"+\")"></i>Increase by 1<br>';
-                echo '<i class="fa fa-arrow-circle-o-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"-\")"></i>Decrease by 1<br>';
-                echo '<i class="fa fa-arrow-circle-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"*\")"></i>Increase by 10<br>';
-                echo '<i class="fa fa-arrow-circle-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\"\/\")"></i>Decrease by 10';
+                $tableName = str_replace(".", "_", $clientIp);
+                $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
+                $sql   = "select proc_id,start_time from load_status where user = '".$uname."' and status = 'running';";
+                $result = $conn->query($sql);
+
+                if($result->num_rows > 0) 
+                {
+                  while($row = $result->fetch_assoc()) 
+                  {
+                    $procId = $row['proc_id'];
+                    $startTime = $row['start_time'];
+                  }
+                  echo '<input type = "button" value = "STOP" id = "runLoad">&nbsp;&nbsp;';
+                  echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\'P\')">';
+                  echo '<br><br><label id = "totTime" style = "display: none;">Total-Time: 0</label>';
+                }
+                else
+                {
+                  echo '<input type = "button" value = "RUN" id = "runLoad">&nbsp;&nbsp;';
+                  echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\'P\')">';
+                  echo '<br><br><label id = "totTime" style = "display: none;">Total-Time: 0</label>';
+                }
+                $conn->close();
+                echo '<div id = "controlParameters" style = "position: relative;margin-top: 20px;display: none;">';
+                  echo '<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\'+\')"></i>Increase by 1<br>';
+                  echo '<i class="fa fa-arrow-circle-o-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\'-\')"></i>Decrease by 1<br>';
+                  echo '<i class="fa fa-arrow-circle-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\'*\')"></i>Increase by 10<br>';
+                  echo '<i class="fa fa-arrow-circle-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\'\/\')"></i>Decrease by 10';
+                echo '</div>';
               echo '</div>';
+              echo '</th>';
+              echo '<th>';
+              echo '<div id = "finalResult" style = "display: none;">';
+                echo '<table><tbody>';
+                echo '<tr style = "background-color: rgb(227, 238, 227);">';
+                echo '<th>';
+                  echo '<div id = "totCalls" style = "padding-top: 5px;padding-bottom: 5px;font-family: Font Awesome\ 5 Free;background-color: #9292ff;border-radius: 50px;font-size: 20px;width: 180px;border: 2px solid blue;">
+                          <center>Calls Created<br>0</center>';
+                  echo '</div>';
+                echo '</th>';
+                echo '<th>';
+                  echo '<div id = "sucCalls" style = "padding-top: 5px;padding-bottom: 5px;font-family: Font Awesome\ 5 Free;background-color: #90d490;border-radius: 50px;font-size: 20px;width: 180px;border: 2px solid green;">
+                          <center>Successfull Calls<br>0</center>';
+                  echo '</div>';
+                echo '</th>';
+                echo '<th>';
+                  echo '<div id = "fldCalls" style = "padding-top: 5px;padding-bottom: 5px;font-family: Font Awesome\ 5 Free;background-color: #e8a4a4;border-radius: 50px;font-size: 20px;width: 180px;border: 2px solid red;">
+                          <center>Failed Calls<br>0</center>';
+                  echo '</div>';
+                echo '</th>';
+                echo '</tr>';
+                echo '<tr style = "background-color: rgb(227, 238, 227);">';
+                echo '<th>';
+                echo '</th>';
+                echo '<th>';
+                  echo '<div id = "sucRate" style = "padding-top: 5px;padding-bottom: 5px;font-family: Font Awesome\ 5 Free;background-color: #90d490;border-radius: 50px;font-size: 20px;width: 180px;border: 2px solid green;">
+                          <center>Success Rate<br>0%</center>';
+                  echo '</div>';
+                echo '</th>';
+                echo '<th>';
+                echo '</th>';
+                echo '</tr>';
+                echo '</tbody></table>';
+              echo '</div>';
+              echo '</th>';
+              echo '</tr></tbody></table>';
             echo '</div>';
 
-            echo '<br>';
             echo '<div id = "serverStats" style = "display: none;">';
               echo '<label style="font-size: 25px;"><b>Server Statistics</b></label><br>';
               if($network === "ims")
@@ -539,17 +612,25 @@
                 echo '<div id = "sbcsig">
                         <label><b>SBC_SIG</b></label><br>
                         <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;">
-                        <div id = "sbcSigUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;overflow-x: auto;"></div>
+                        <div id = "sbcSigUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div>
                       </div>';
                 echo '<br><br>';
-                echo '<div id = "c5">
-                        <label><b>C5</b></label><br>
+                echo '<div id = "ngcpe">
+                        <label><b>NGCPE</b></label><br>
                         <input type = "text" id = "c5Ip" value = "" placeholder = "Enter C5 IP" style = "border-radius: 5px;">&nbsp;&nbsp;
                         <input type = "text" id = "c5Username" value = "" placeholder = "Enter C5 Username" style = "border-radius: 5px;">&nbsp;&nbsp;
-                        <input type = "password" id = "c5Password" value = "" placeholder = "Enter C5 Password" style = "border-radius: 5px;"><br><br>
-                        <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;"><br>
+                        <input type = "password" id = "c5Password" value = "" placeholder = "Enter C5 Password" style = "border-radius: 5px;"><br>
+                        <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;margin-top: 5px;"><br>
                         <div id = "ngcpeUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div><br>
+                      </div>';
+                echo '<div id = "fs">
+                        <label><b>FS</b></label><br>
+                        <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;"><br>
                         <div id = "fsUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div><br>
+                      </div>';
+                echo '<div id = "ms">
+                        <label><b>MS</b></label><br>
+                        <input type = "button" class = "showServerStats" value = "START" style = "border-radius: 10px;"><br>
                         <div id = "msUsage" style="height:300px;width:100%;border:2px solid black;border-radius: 10px;margin-top: 10px;"></div>
                       </div>';
               }
@@ -575,10 +656,15 @@
       var fsStatsTimer = "";
       var msStatsTimer = "";
       var pid = '<?php echo $procId; ?>';
+      var startTime = new Date('<?php echo $startTime; ?>');
       var origlp = "<?php echo $origlp; ?>";
       var termlp = "<?php echo $termlp; ?>";
       var chartsbcsig, chartngcpe, chartfs, chartms;
       var sbcsig_x = 0;
+      var ngcpe_x = 0;
+      var fs_x = 0;
+      var ms_x = 0;
+      var c5Ip, c5Username, c5Password;
       var network = '<?php echo $network; ?>';
 
       $(document).ready(function(){
@@ -651,98 +737,168 @@
             chartsbcsig = new CanvasJS.Chart("sbcSigUsage",
             {
               title:{
-              text: "SBC-SIG MEMORY & CPU USSAGE"
+                text: "SBC-SIG MEMORY & CPU USSAGE"
               },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
               data: [
               {
                 type: "line",
-
+                axisYIndex: 0,
                 dataPoints: [
                 { x: 0, y: 0.0 }
                 ]
               },
               {
                 type: "line",
-
+                axisYIndex: 1,
                 dataPoints: [
                 { x: 0, y: 0.0 }
                 ]
               }
-              ]
+              ],
             });
             chartngcpe = new CanvasJS.Chart("ngcpeUsage",
             {
               title:{
-              text: "NGCPE MEMORY & CPU USSAGE"
+                text: "NGCPE MEMORY & CPU USSAGE"
               },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
               data: [
               {
                 type: "line",
-
+                axisYIndex: 0,
                 dataPoints: [
-                { x: 0, y: 0.0 },
+                { x: 0, y: 0.0 }
                 ]
               },
               {
                 type: "line",
-
+                axisYIndex: 1,
                 dataPoints: [
                 { x: 0, y: 0.0 }
                 ]
               }
-              ]
+              ],
             });
             chartfs = new CanvasJS.Chart("fsUsage",
             {
               title:{
-              text: "FS MEMORY & CPU USSAGE"
+                text: "FS MEMORY & CPU USSAGE"
               },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
               data: [
               {
                 type: "line",
-
+                axisYIndex: 0,
                 dataPoints: [
-                { x: 0, y: 0.0 },
+                { x: 0, y: 0.0 }
                 ]
               },
               {
                 type: "line",
-
+                axisYIndex: 1,
                 dataPoints: [
                 { x: 0, y: 0.0 }
                 ]
               }
-              ]
+              ],
             });
             chartms = new CanvasJS.Chart("msUsage",
             {
               title:{
-              text: "MS MEMORY & CPU USSAGE"
+                text: "MS MEMORY & CPU USSAGE"
               },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
               data: [
               {
                 type: "line",
-
+                axisYIndex: 0,
                 dataPoints: [
-                { x: 0, y: 0.0 },
+                { x: 0, y: 0.0 }
                 ]
               },
               {
                 type: "line",
-
+                axisYIndex: 1,
                 dataPoints: [
-                { x: 0, y: 0.0 },
+                { x: 0, y: 0.0 }
                 ]
               }
-              ]
+              ],
             });
           }
           if($('#runLoad').val().localeCompare("STOP") == 0)
           {
-            updateClientLoadStats();
+            $('#load_rate').attr('readonly', true);
+            $('#load_limit').attr('readonly', true);
+            $('#pauseLoad').show();
+            $('#totTime').show();
+            $('#controlParameters').show("show");
+            $('#finalResult').hide();
+            $('#serverStats').show();
+            renderCharts();
+            localStorage.setItem("runStatus", "running");
+            updateClientLoadStats();                  
           }
         }
       });
+
+      window.onbeforeunload = function(event)
+      {
+        if($('#runLoad').val().localeCompare("STOP") == 0)
+        {
+          var r = confirm("Load running. Do you want to quit?");
+          return r;
+        }
+      };
 
       function renderCharts()
       {
@@ -761,6 +917,23 @@
 
       function controlLoad(val)
       {
+        var lr = parseInt($('#load_rate').val());
+        if(val.localeCompare('-') == 0)
+        {
+          if((lr - 1) < 1)
+          {
+            alert("Cannot decrease below this");
+            return false;
+          }
+        }
+        else if(val.localeCompare('/') == 0)
+        {
+          if((lr - 10) < 1)
+          {
+            alert("Cannot decrease below this");
+            return false;
+          }
+        }
         $.ajax({
           type: "POST",
           url: "controlLoad.php",
@@ -770,55 +943,126 @@
           },
           success:function(data)
           {
-              console.log(data);
-              if(data[0] == '<')
-              {
-                console.log("Connection issue");
-                return false;
-              }
+            console.log(data);
+            if(data[0] == '<')
+            {
+              console.log("Connection issue");
+              return false;
+            }
 
-              var resp = JSON.parse(data);
-              console.log(resp);
-              if(resp.statusFlag != null &&
-                  resp.statusFlag.localeCompare("0") == 0)
+            var resp = JSON.parse(data);
+            console.log(resp);
+            if(resp.statusFlag != null &&
+                resp.statusFlag.localeCompare("0") == 0)
+            {
+              alert(resp.message);
+            }
+            else
+            {
+              if(resp.message.localeCompare("p") == 0)
               {
-                alert(resp.message);
-              }
-              else
-              {
-                if(val.localeCompare("+") == 0)
-                {
 
-                }
-                else if(val.localeCompare("+") == 0)
-                {
-                  
-                }
-                else if(val.localeCompare("+") == 0)
-                {
-                  
-                }
-                else if(val.localeCompare("+") == 0)
-                {
-                  
-                }
-                else if(val.localeCompare("+") == 0)
-                {
-                  
-                }
               }
+              else if(resp.message.localeCompare("+") == 0)
+              {
+                var num = parseInt($('#load_rate').val());
+                num += 1;
+                $('#load_rate').attr('value', num);
+              }
+              else if(resp.message.localeCompare("-") == 0)
+              {
+                var num = parseInt($('#load_rate').val());
+                num -= 1;
+                $('#load_rate').attr('value', num);
+              }
+              else if(resp.message.localeCompare("*") == 0)
+              {
+                var num = parseInt($('#load_rate').val());
+                num += 10;
+                $('#load_rate').attr('value', num);
+              }
+              else if(resp.message.localeCompare("/") == 0)
+              {
+                var num = parseInt($('#load_rate').val());
+                num -= 10;
+                $('#load_rate').attr('value', num);
+              }
+            }
           }
         });
         return false;
       }
 
       $('.showServerStats').click(function(){
-        //alert($(this).parent().attr('id'));
+        c5Ip = $('#c5Ip').val();
+        c5Username = $('#c5Username').val();
+        c5Password = $('#c5Password').val();
+
         if($(this).parent().attr('id').localeCompare("sbcsig") == 0)
         {
           if($(this).attr('value').localeCompare("START") == 0)
           {
             sbcsigStatsShow(this);
+            $(this).attr('value', 'STOP');
+          }
+          else
+          {
+            clearTimeout(sbcsigStatsTimer);
+            $(this).attr('value', 'START');
+          }       
+        }
+        else if($(this).parent().attr('id').localeCompare("ngcpe") == 0)
+        {
+          if(c5Ip.localeCompare("") == 0 &&
+             c5Username.localeCompare("") == 0 && 
+             c5Password.localeCompare("") == 0)
+          {
+            alert("Pleasse provide C5 credentials");
+            return false;
+          }
+          if($(this).attr('value').localeCompare("START") == 0)
+          {
+            ngcpeStatsShow(this);
+            $(this).attr('value', 'STOP');
+          }
+          else
+          {
+            clearTimeout(sbcsigStatsTimer);
+            $(this).attr('value', 'START');
+          }       
+        }
+        else if($(this).parent().attr('id').localeCompare("fs") == 0)
+        {
+          if(c5Ip.localeCompare("") == 0 &&
+             c5Username.localeCompare("") == 0 && 
+             c5Password.localeCompare("") == 0)
+          {
+            alert("Pleasse provide C5 credentials");
+            return false;
+          }
+          if($(this).attr('value').localeCompare("START") == 0)
+          {
+            fsStatsShow(this);
+            $(this).attr('value', 'STOP');
+          }
+          else
+          {
+            clearTimeout(sbcsigStatsTimer);
+            $(this).attr('value', 'START');
+          }       
+        }
+        else if($(this).parent().attr('id').localeCompare("ms") == 0)
+        {
+          if(c5Ip.localeCompare("") == 0 &&
+             c5Username.localeCompare("") == 0 && 
+             c5Password.localeCompare("") == 0)
+          {
+            alert("Pleasse provide C5 credentials");
+            return false;
+          }
+          if($(this).attr('value').localeCompare("START") == 0)
+          {
+            msStatsShow(this);
             $(this).attr('value', 'STOP');
           }
           else
@@ -835,7 +1079,7 @@
               type: "POST",
               url: "getServerStats.php",
               data: {
-                MODULE: "sbcsig"
+                MODULE: "cdotsi"
               },
               success:function(data)
               {
@@ -845,7 +1089,7 @@
                     console.log("Connection issue");
                     sbcsigStatsTimer = setTimeout(function(){
                                           sbcsigStatsShow();
-                                      }, 3000);
+                                      }, 5000);
                     return false;
                   }
 
@@ -868,7 +1112,160 @@
                     sbcsig_x += 3;
                     sbcsigStatsTimer = setTimeout(function(){
                                           sbcsigStatsShow();
-                                    }, 3000);
+                                    }, 5000);
+                    document.getElementById("c5Ip").disabled = true;
+                    document.getElementById("c5Username").disabled = true;
+                    document.getElementById("c5Password").disabled = true;
+                  }
+              }
+          });
+      }
+      function ngcpeStatsShow(obj)
+      {
+          $.ajax({
+              type: "POST",
+              url: "getServerStats.php",
+              data: {
+                MODULE: "call_agent",
+                IP: c5Ip,
+                U: c5Username,
+                P: c5Password
+              },
+              success:function(data)
+              {
+                  console.log(data);
+                  if(data[0] == '<')
+                  {
+                    console.log("Connection issue");
+                    ngcpeStatsTimer = setTimeout(function(){
+                                          ngcpeStatsShow();
+                                      }, 5000);
+                    return false;
+                  }
+
+                  var resp = JSON.parse(data);
+                  console.log(resp);
+                  if(resp.statusFlag != null &&
+                     resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                    clearTimeout(ngcpeStatsTimer);
+                    obj.value = "START";
+                  }
+                  else
+                  {
+                    var mem = parseFloat(resp.mem);
+                    var cpu = parseFloat(resp.cpu);
+                    chartngcpe.data[0].dataPoints.push({x: ngcpe_x, y: mem});
+                    chartngcpe.data[1].dataPoints.push({x: ngcpe_x, y: cpu});
+                    chartngcpe.render();
+                    ngcpe_x += 3;
+                    ngcpeStatsTimer = setTimeout(function(){
+                                          ngcpeStatsShow();
+                                    }, 5000);
+                    $('#c5Ip').attr('readonly', true);
+                    $('#c5Username').attr('readonly', true);
+                    $('#c5Password').attr('readonly', true);
+                  }
+              }
+          });
+      }
+      function fsStatsShow(obj)
+      {
+          $.ajax({
+              type: "POST",
+              url: "getServerStats.php",
+              data: {
+                MODULE: "fserver",
+                IP: c5Ip,
+                U: c5Username,
+                P: c5Password
+              },
+              success:function(data)
+              {
+                  console.log(data);
+                  if(data[0] == '<')
+                  {
+                    console.log("Connection issue");
+                    fsStatsTimer = setTimeout(function(){
+                                          fsStatsShow();
+                                      }, 5000);
+                    return false;
+                  }
+
+                  var resp = JSON.parse(data);
+                  console.log(resp);
+                  if(resp.statusFlag != null &&
+                     resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                    clearTimeout(fsStatsTimer);
+                    obj.value = "START";
+                  }
+                  else
+                  {
+                    var mem = parseFloat(resp.mem);
+                    var cpu = parseFloat(resp.cpu);
+                    chartfs.data[0].dataPoints.push({x: fs_x, y: mem});
+                    chartfs.data[1].dataPoints.push({x: fs_x, y: cpu});
+                    chartfs.render();
+                    fs_x += 3;
+                    fsStatsTimer = setTimeout(function(){
+                                          fsStatsShow();
+                                    }, 5000);
+                    $('#c5Ip').attr('readonly', true);
+                    $('#c5Username').attr('readonly', true);
+                    $('#c5Password').attr('readonly', true);
+                  }
+              }
+          });
+      }
+      function msStatsShow(obj)
+      {
+          $.ajax({
+              type: "POST",
+              url: "getServerStats.php",
+              data: {
+                MODULE: "mserver",
+                IP: c5Ip,
+                U: c5Username,
+                P: c5Password
+              },
+              success:function(data)
+              {
+                  console.log(data);
+                  if(data[0] == '<')
+                  {
+                    console.log("Connection issue");
+                    msStatsTimer = setTimeout(function(){
+                                          msStatsShow();
+                                      }, 5000);
+                    return false;
+                  }
+
+                  var resp = JSON.parse(data);
+                  console.log(resp);
+                  if(resp.statusFlag != null &&
+                     resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                    clearTimeout(msStatsTimer);
+                    obj.value = "START";
+                  }
+                  else
+                  {
+                    var mem = parseFloat(resp.mem);
+                    var cpu = parseFloat(resp.cpu);
+                    chartms.data[0].dataPoints.push({x: ms_x, y: mem});
+                    chartms.data[1].dataPoints.push({x: ms_x, y: cpu});
+                    chartms.render();
+                    ms_x += 3;
+                    msStatsTimer = setTimeout(function(){
+                                          msStatsShow();
+                                    }, 5000);
+                    $('#c5Ip').attr('readonly', true);
+                    $('#c5Username').attr('readonly', true);
+                    $('#c5Password').attr('readonly', true);
                   }
               }
           });
@@ -1295,6 +1692,21 @@
             }
 
             if(this.firstChild.checked == true &&
+              this.firstChild.id.localeCompare("reg500resp") == 0 &&
+              resp == 1)
+            {
+              scenario += "<recv response = \"500\" optional = \"true\" next = \"1\">\n</recv>\n\n";
+              label = 1;
+              msgTags += "500;";
+            }
+            else if(this.firstChild.checked == false &&
+              this.firstChild.id.localeCompare("reg500resp") == 0 &&
+              resp == 1)
+            {
+              scenario += "<!--recv response = \"500\" optional = \"true\" next = \"1\">\n</recv-->\n\n";
+            }
+
+            if(this.firstChild.checked == true &&
                     this.firstChild.id.localeCompare("reg401resp") == 0 &&
                     resp == 1)
             {
@@ -1356,7 +1768,7 @@
                     console.log("Connection issue");
                     statsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
-                                      }, 5000);
+                                      }, 2000);
                     return false;
                   }
 
@@ -1385,9 +1797,12 @@
                     }
                     if(runFlag == 1)
                     {
+                      var curTime = new Date();
+                      var totTime = curTime - startTime;
+                      document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
                       statsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
-                                      }, 5000);
+                                      }, 2000);
                     }
                     else
                     {
@@ -1403,13 +1818,16 @@
       {
         var loadRate = document.getElementById("load_rate").value;
         var loadLimit = document.getElementById("load_limit").value;
+        startTime = new Date();
           $.ajax({
               type: "POST",
               url: "startLoadTesting.php",
               data: {
                 SM: submenu,
                 LR: loadRate,
-                LL: loadLimit
+                LL: loadLimit,
+                ST: startTime,
+                MT: msgTags
               },
               success:function(data)
               {
@@ -1418,9 +1836,6 @@
                 if(data[0] == '<')
                 {
                   alert("Connection issue with the client");
-                  statsUpdateTimer = setTimeout(function(){
-                                        updateClientLoadStats();
-                                    }, 5000);
                   return false;
                 }
                 var resp = JSON.parse(data);
@@ -1445,15 +1860,18 @@
                 }
                 else
                 {
+                  document.getElementById("runLoad").blur();
                   $('#runLoad').attr('value', 'STOP');
                   localStorage.setItem("runStatus", "running");
                   pid = resp.procId;
-                  document.getElementById("load_rate").disabled = true;
-                  document.getElementById("load_limit").disabled = true;
+                  $('#load_rate').attr('readonly', false);
+                  $('#load_limit').attr('readonly', false);
                   $('#controlParameters').show("show");
-                  $('#serverStats').show("slow");
+                  $('#serverStats').show();
                   renderCharts();
-                  $('#pauseLoad').show("slow");
+                  $('#pauseLoad').show();
+                  $('#totTime').show();
+                  $('#finalResult').hide();
                   updateClientLoadStats();
                 }
               }
@@ -1462,57 +1880,103 @@
 
       function stopLoad()
       {
-          $.ajax({
-              type: "POST",
-              url: "stopLoadTesting.php",
-              data: {
-                SM: submenu
-              },
-              success:function(data)
+        var r = confirm("Are you sure?");
+        if (r == false) 
+        {
+          updateClientLoadStats();
+          return false;
+        }
+        $.ajax({
+            type: "POST",
+            url: "stopLoadTesting.php",
+            data: {
+              SM: submenu,
+              PID: pid,
+              MT: msgTags
+            },
+            success:function(data)
+            {
+              if(data[0] == '<')
               {
-                if(data[0] == '<')
-                {
-                  alert("Connection issue with the client");
-                  statsUpdateTimer = setTimeout(function(){
-                                        updateClientLoadStats();
-                                    }, 5000);
-                  return false;
-                }
-                $('#runLoad').attr('value', 'RUN');
-                localStorage.setItem("runStatus", "stopped");
-                $('#controlParameters').hide("show");
-                document.getElementById("load_rate").disabled = false;
-                document.getElementById("load_limit").disabled = false;
-                $('#pauseLoad').hide("slow");
+                console.log(data);
+                alert("Connection issue with the client");
+                return false;
               }
-          });
+              var resp = JSON.parse(data);
+              if(resp.statusFlag != null &&
+                 resp.statusFlag.localeCompare("0") == 0)
+              {
+                alert(resp.message);
+                return false;
+              }
+              var totalCalls = 0, successCalls = 0, rate = 0.0;
+              for(keys in resp)
+              {
+                if(keys.localeCompare("totCalls") == 0)
+                {
+                  document.getElementById("totCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                  totalCalls = parseInt(resp[keys]);
+                }
+                else if(keys.localeCompare("sucCalls") == 0)
+                {
+                  document.getElementById("sucCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                  successCalls = parseInt(resp[keys]);
+                }
+                else if(keys.localeCompare("fldCalls") == 0)
+                {
+                  document.getElementById("fldCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                }
+                else if(document.getElementById("msgTags" + keys) != null)
+                {
+                  document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                }
+              }
+              rate = (successCalls / totalCalls) * 100;
+              document.getElementById("sucRate").innerHTML = "<center>Success Rate<br>"+rate+"%</center>";
+              clearTimeout(statsUpdateTimer);
+              document.getElementById("runLoad").blur();
+              $('#runLoad').attr('value', 'RUN');
+              localStorage.setItem("runStatus", "stopped");
+              $('#controlParameters').hide("show");
+              $('#load_rate').attr('readonly', false);
+              $('#load_limit').attr('readonly', false);
+              $('#pauseLoad').hide();
+              if(network.localeCompare("ims") == 0)
+              {
+
+              }
+              else
+              {
+                $('.showServerStats').attr('value', 'START');
+                clearTimeout(sbcsigStatsTimer);
+                clearTimeout(ngcpeStatsTimer);
+                clearTimeout(fsStatsTimer);
+                clearTimeout(msStatsTimer);
+                $('#c5Ip').attr('readonly', false);
+                $('#c5Username').attr('readonly', false);
+                $('#c5Password').attr('readonly', false);
+              }
+              $('#serverStats').hide();
+              $('#finalResult').show('slow');
+            },
+            error:function(data)
+            {
+              alert(data);
+            }
+        });
       }
 
       $('#runLoad').click(function(){
         if($(this).val().localeCompare("RUN") == 0)
         {
-          //startLoad();
-          $('#runLoad').attr('value', 'STOP');
-                  localStorage.setItem("runStatus", "running");
-                  document.getElementById("load_rate").disabled = true;
-                  document.getElementById("load_limit").disabled = true;
-                  $('#controlParameters').show("show");
-                  $('#serverStats').show("slow");
-                  $('#pauseLoad').show("slow");
-                  renderCharts();
+          $('#totTime').hide();
+          startLoad();
         }
         else
         {
           clearTimeout(statsUpdateTimer);
-          //stopLoad();
-          $('#runLoad').attr('value', 'RUN');
-                localStorage.setItem("runStatus", "stopped");
-                $('#controlParameters').hide("show");
-                document.getElementById("load_rate").disabled = false;
-                document.getElementById("load_limit").disabled = false;
-                $('#pauseLoad').hide("slow");
+          stopLoad();
         }
-        
       });
 
     </script>

@@ -5,8 +5,10 @@
     include('Net/SSH2.php');
 
     $submenu        = $_POST["SM"];
-    $loadRate       = $POST["LR"];
+    $loadRate       = $_POST["LR"];
     $loadLimit      = $_POST["LL"];
+    $startTime      = $_POST["ST"];
+    $msgTags        = $_POST['MT'];
     $projectName    = $_COOKIE["projectName"];
     $userName       = $_COOKIE["userName"];
     $location       = $_COOKIE["location"];
@@ -31,19 +33,19 @@
         $sshPCSCF = new Net_SSH2($borderIp);
         if (!$sshPCSCF->login($borderUsername, $borderPassword)) 
         {
-            $resp->message    = "Server connect failure";
-            $resp->statusFlag = "0";
-            echo $resp;
+            $resp['message']    = "Server connect failure";
+            $resp['statusFlag'] = "0";
+            echo json_encode($resp);
             exit(1);
         }
 
-        $checkProc = $ssh->exec("ps o pid= -C cdotpsi");
+        $checkProc = $sshPCSCF->exec("ps o pid= -C cdotpsi");
         
         if(strlen($checkProc) < 2)
         {
-            $resp->message    = "Border server not running. Please contact the server team for the issue.";
-            $resp->statusFlag = "0";
-            echo $resp;
+            $resp['message']    = "Border server not running. Please contact the server team for the issue.";
+            $resp['statusFlag'] = "0";
+            echo json_encode($resp);
             exit(1);
         }
     }
@@ -52,19 +54,19 @@
         $sshSBC = new Net_SSH2($borderIp);
         if (!$sshSBC->login($borderUsername, $borderPassword)) 
         {
-            $resp->message    = "Server connect failure";
-            $resp->statusFlag = "0";
-            echo $resp;
+            $resp['message']    = "Server connect failure";
+            $resp['statusFlag'] = "0";
+            echo json_encode($resp);
             exit(1);
         }
 
-        $checkProc = $ssh->exec("ps o pid= -C cdotsi");
+        $checkProc = $sshSBC->exec("ps o pid= -C cdotsi");
         
         if(strlen($checkProc) < 2)
         {
-            $resp->message    = "Border server not running. Please contact the server team for the issue.";
-            $resp->statusFlag = "0";
-            echo $resp;
+            $resp['message']    = "Border server not running. Please contact the server team for the issue.";
+            $resp['statusFlag'] = "0";
+            echo json_encode($resp);
             exit(1);
         }
     }
@@ -73,28 +75,30 @@
         $sshClient = new Net_SSH2($clientIp);
         if (!$sshClient->login($clientUsername, $clientPassword)) 
         {
-            $resp->message    = "Server connect failure";
-            $resp->statusFlag = "0";
-            echo $resp;
+            $resp['message']    = "Client connect failure";
+            $resp['statusFlag'] = "0";
+            echo json_encode($resp);
             exit(1);
         }
 
-        $runCmd = "rm -f /root/".$path."/reg_scenario_*.csv";
+        $runCmd = "rm -f /root/".$path.$submenu."_scenario_*.csv";
         $shellCmdRes = $sshClient->exec($runCmd);
 
-        $port = explode(";", file_get_contents("projects/external/".$path."/reg_user.csv"))[3];
+        $port = explode(";", file_get_contents("projects/external/".$path.$submenu."_user.csv"))[3];
         if($loadLimit > 0)
         {
-            $runCmd = "/root/".$path."/./sipp ".$borderIp." -sf /root/".$path."/reg_scenario.xml -inf /root/".$path."/reg_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -m ".$loadLimit." -trace_stat -trace_counts -fd 5";
+            $runCmd = "/root/".$path."./sipp ".$borderIp." -sf /root/".$path.$submenu."_scenario.xml -inf /root/".$path.$submenu."_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -m ".$loadLimit." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
         }
         else
         {
-            $runCmd = "/root/".$path."/./sipp ".$borderIp." -sf /root/".$path."/reg_scenario.xml -inf /root/".$path."/reg_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -trace_stat -trace_counts -fd 5";
+            $runCmd = "/root/".$path."./sipp ".$borderIp." -sf /root/".$path.$submenu."_scenario.xml -inf /root/".$path.$submenu."_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
         }
         $screenRunCmd = "screen -d -m -S ".$screenName." ".$runCmd;
         $shellCmdRes = $sshClient->exec($screenRunCmd);
         $procIdCmd = "pgrep -P `ps -ef | grep ".$screenName." | awk '{print $2}' | head -1`";
-        $procId = $ssh->exec($procIdCmd);
+        $procId = $sshClient->exec($procIdCmd);
+        $procId = str_replace("\n","",$procId);
+        $procId = str_replace("\r","",$procId);
 
         /*
         if(preg_match_all("/\[\w+.+\]/", $shellCmdRes, $matches))
@@ -111,7 +115,7 @@
             $resp["procId"] = $procId;
         }
         */
-        $checkProc = $ssh->exec("ps o pid= -p ".$procId);
+        $checkProc = $sshClient->exec("ps o pid= -p ".$procId);
         if(strlen($checkProc) > 1)
         {
             $runFlag = 1;
@@ -131,11 +135,11 @@
             $resp["statusFlag"] = "0";
             $killProc = "kill -9 ".$procId." screen -wipe";
             $shellCmdRes = $sshClient->exec($killProc);
-            echo $resp;
+            echo json_encode($resp);
             exit(1);
         }
 
-        $sql = "insert into load_status(user, status, proc_id) values('".$uname."', 'running', '".$procId."');";
+        $sql = "insert into load_status(user, status, proc_id, start_time) values('".$uname."', 'running', '".$procId."', '".$startTime."');";
 
         if ($conn->query($sql) === FALSE)
         {
@@ -143,7 +147,7 @@
             $resp["statusFlag"] = "0";
             $killProc = "kill -9 ".$procId." screen -wipe";
             $shellCmdRes = $sshClient->exec($killProc);
-            echo $resp;
+            echo json_encode($resp);
             $conn->close();
             exit(1);
         }
@@ -167,13 +171,14 @@
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1)
         {
-            $resp[$msgTags[$j]."_".$j] = $res[$i]."/".$res[$i + 3];
             if(is_numeric($msgTags[$j]))
             {
+                $resp[$msgTags[$j]."_".$j] = $res[$i]."/".$res[$i + 3];
                 $i = $i + 4;
             }
             else
             {
+                $resp[$msgTags[$j]."_".$j] = $res[$i];
                 $i = $i + 2;
             }
         }
