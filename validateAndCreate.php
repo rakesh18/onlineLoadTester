@@ -1,6 +1,7 @@
 <?php
   session_start();
 
+  include('globals.php');
   include('dbConfig.php');
   include('Net/SSH2.php');
 
@@ -20,7 +21,7 @@
   $clientUsername    = "";
   $clientPassword    = "";
   $resp              = array("statusFlag" => "1", 
-                         "message" => "Success");
+                             "message" => "Success");
 
   $userName       = $_POST["userName"];
   $projectName    = $_POST["projectName"];
@@ -48,11 +49,11 @@
     $clientIp = $systemIp;
   setcookie("clientIp", $clientIp, time() + (86400 * 30), "/");
   
-  $userDir = $userName."_".$projectName."_load/";
+  $userDir = $userName."_".$projectName;
 
-  if(file_exists("projects/".$location."/" . $userDir))
+  if(file_exists("projects/".$location."/".$userDir))
   {
-    $resp["message"] = "Project for this user already exist.\nDo you wish to use this or create your own?";
+    $resp["message"] = "User with this project already exist.\nDo you wish to use this or create a new one?";
     $resp["statusFlag"] = "2";
     $serverResp = json_encode($resp);
     echo $serverResp;
@@ -130,48 +131,61 @@
       exit(1);
     }
 
-    $createDirCmd    = "mkdir /root/".$userDir."/";
-    $shellCmdRes     = $sshClient->exec($createDirCmd);
-    $chmodUserDirCmd = "chmod -R 777 /root/".$userDir."/";
-    $shellCmdRes     = $sshClient->exec($chmodUserDirCmd);
-
-    $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
-    foreach ($files as $f)
+    $subnetwork = array_diff(scandir("defaultScenarios"), array('.', '..'));
+    foreach ($subnetwork as $sn)
     {
-      if(is_dir("defaultScenarios/".$f) === TRUE)
+      if(is_dir("defaultScenarios/".$sn) === TRUE)
       {
-        $createDirCmd    = "mkdir /root/".$userDir."/".$f;
-        $shellCmdRes     = $sshClient->exec($createDirCmd);
-        $chmodUserDirCmd = "chmod -R 777 /root/".$userDir."/".$f;
-        $shellCmdRes     = $sshClient->exec($chmodUserDirCmd);
-        $files2 = array_diff(scandir("defaultScenarios/".$f), array('.', '..'));
-        foreach ($files2 as $f2)
+        $subtestcases = array_diff(scandir("defaultScenarios/".$sn), array('.', '..'));
+        foreach ($subtestcases as $stc)
         {
-          $fileContent = file_get_contents('defaultScenarios/'.$f.'/'.$f2);
-          $createScenarioCmd = "echo '".$fileContent."' > /root/".$userDir."/".$f."/".$f2;
-          $shellCmdRes = $sshClient->exec($createScenarioCmd);
+          if(is_dir("defaultScenarios/".$sn."/".$stc) === TRUE)
+          {
+            $dirName      = "/root/".$userDir."/".$sn."/".$stc;
+            $createDirCmd = "mkdir -p ".$dirName;
+            $shellCmdRes  = $sshClient->exec($createDirCmd);
+            $files        = array_diff(scandir("defaultScenarios/".$sn."/".$stc), array('.', '..'));
+            foreach ($files as $f)
+            {
+              $fileContent       = file_get_contents("defaultScenarios/".$sn."/".$stc."/".$f);
+              $createScenarioCmd = "echo '".$fileContent."' > ".$dirName."/".$f;
+              $shellCmdRes       = $sshClient->exec($createScenarioCmd);
+              copy('defaultScenarios/'.$sn."/".$stc."/".$f, 
+                   'projects/'.$location."/".$userDir."/".$sn."/".$stc."/".$f);
+            }
+          }
         }
       }
     }
+    $chmodCmd    = "chmod -R 777 /root/".$userDir;
+    $shellCmdRes = $sshClient->exec($chmodCmd);
   }
   else
   {
-    $clientIp = $systemIp;
-  }
-
-  mkdir("projects/".$location."/".$userDir, 0777);
-  $files = array_diff(scandir("defaultScenarios"), array('.', '..'));
-  foreach ($files as $f)
-  {
-    if(is_dir("defaultScenarios/".$f) === TRUE)
+    mkdir("projects/".$location."/".$userDir, 0777);
+    $subnetwork = array_diff(scandir("defaultScenarios"), array('.', '..'));
+    foreach ($subnetwork as $sn)
     {
-      mkdir("projects/".$location."/".$userDir."/".$f, 0777);
-      $files2 = array_diff(scandir("defaultScenarios/".$f), array('.', '..'));
-      foreach ($files2 as $f2)
+      if(is_dir("defaultScenarios/".$sn) === TRUE)
       {
-        copy('defaultScenarios/'.$f."/".$f2, 'projects/'.$location."/".$userDir."/".$f."/".$f2);
+        mkdir("projects/".$location."/".$userDir."/".$sn, 0777);
+        $subtestcases = array_diff(scandir("defaultScenarios/".$sn), array('.', '..'));
+        foreach ($subtestcases as $stc)
+        {
+          if(is_dir("defaultScenarios/".$sn."/".$stc) === TRUE)
+          {
+            mkdir("projects/".$location."/".$userDir."/".$sn."/".$stc, 0777);
+            $files = array_diff(scandir("defaultScenarios/".$sn."/".$stc), array('.', '..'));
+            foreach ($files as $f)
+            {
+              copy('defaultScenarios/'.$sn."/".$stc."/".$f, 
+                  'projects/'.$location."/".$userDir."/".$sn."/".$stc."/".$f);
+            }
+          }
+        }
       }
     }
+    exec("chmod -R 777 "."projects/".$location."/".$userDir);
   }
   
   $serverResp = json_encode($resp);

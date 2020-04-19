@@ -204,7 +204,7 @@ div#callOptions {
     border-radius: 5px;
 }
 
-div#reg {
+div#one {
     position: relative;
     width: 100%;
     height: 100px;
@@ -214,13 +214,13 @@ div#reg {
     cursor: pointer;
     border-radius: 5px;
 }
-div#reg:hover {
+div#one:hover {
     margin-bottom: 3px;
     border: 1px solid black;
     box-shadow: 2px 3px grey;
 }
 
-div#basicCall {
+div#two {
     position: relative;
     width: 100%;
     height: 100px;
@@ -230,55 +230,7 @@ div#basicCall {
     cursor: pointer;
     border-radius: 5px;
 }
-div#basicCall:hover {
-    margin-bottom: 3px;
-    border: 1px solid black;
-    box-shadow: 2px 3px grey;
-}
-
-div#ivrsCall {
-    position: relative;
-    width: 100%;
-    height: 100px;
-    font-size: 30px;
-    padding: 25px 20px 20px 20px;
-    background-color: rgb(201, 135, 135);
-    cursor: pointer;
-    border-radius: 5px;
-}
-div#ivrsCall:hover {
-    margin-bottom: 3px;
-    border: 1px solid black;
-    box-shadow: 2px 3px grey;
-}
-
-div#xferCall {
-    position: relative;
-    width: 100%;
-    height: 100px;
-    font-size: 30px;
-    padding: 25px 20px 20px 20px;
-    background-color: rgb(199, 94, 94);
-    cursor: pointer;
-    border-radius: 5px;
-}
-div#xferCall:hover {
-    margin-bottom: 3px;
-    border: 1px solid black;
-    box-shadow: 2px 3px grey;
-}
-
-div#msg {
-    position: relative;
-    width: 100%;
-    height: 100px;
-    font-size: 30px;
-    padding: 25px 20px 20px 20px;
-    background-color: rgb(114, 70, 70);
-    cursor: pointer;
-    border-radius: 5px;
-}
-div#msg:hover {
+div#two:hover {
     margin-bottom: 3px;
     border: 1px solid black;
     box-shadow: 2px 3px grey;
@@ -289,6 +241,14 @@ div#scenarioOptions {
 }
 
 div.origRegRqst {
+    border: 2px solid rgb(18, 110, 18);
+    border-radius: 10px;
+    padding: 20px 20px 20px 20px;
+    font-size: 20px;
+    background-color: rgb(209, 209, 206);
+    margin-top: 15px;
+}
+div.origRegSdp {
     border: 2px solid rgb(18, 110, 18);
     border-radius: 10px;
     padding: 20px 20px 20px 20px;

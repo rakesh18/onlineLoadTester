@@ -1,6 +1,6 @@
 <?php
 include 'Net/SSH2.php';
-
+include 'globals.php';
 /*
 $ssh = new Net_SSH2('192.168.137.43');
 if (!$ssh->login('root', 'hakunamatata')) {
@@ -43,6 +43,5 @@ $output = $ssh->exec($runCmd);
 echo $output;
 */
 
-$data = explode(";", file_get_contents("uas_register_3404_.csv"));
-echo $data[12].",".$data[15].",".$data[17];
+echo $responses[str_replace("\"", "", explode(" ", explode("=", '<recv response="403" optional="true" next="1">')[1])[0])];
 ?>
