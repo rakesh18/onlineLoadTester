@@ -294,7 +294,7 @@
             processData: false,
             contentType: false,
             success: function(result, status, xhr){
-              console.log(result + " , " + status);
+              console.log(result);
               if(result[0] == '<')
               {
                 alert("Server error");
@@ -325,8 +325,8 @@
                 location.reload();
               }
             },
-            error: function(status, error) {
-                alert(status + " , " + error);
+            error: function(status) {
+                alert(status);
                 location.reload();
             }
           });

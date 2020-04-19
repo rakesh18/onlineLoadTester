@@ -139,7 +139,7 @@
             exit(1);
         }
 
-        $sql = "insert into load_status(user, status, proc_id, start_time) values('".$uname."', 'running', '".$procId."', '".$startTime."');";
+        $sql = "insert into load_status(user, status, proc_id, start_time, msg_tags) values('".$uname."', 'running', '".$procId."', '".$startTime."', '".$msgTags."');";
 
         if ($conn->query($sql) === FALSE)
         {
@@ -158,13 +158,20 @@
         $resp["statusFlag"] = "2";
         if($location === "external")
         {
-            $userCsvCmd = "tail -1 /root/".$path."/reg_scenario_*_counts.csv";
-            $shellCmdRes = $sshClient->exec($userCsvCmd);
-            $res = explode(";", $shellCmdRes);
+            $statCmd = "tail -1 /root/".$path.$submenu."_scenario_*_.csv";
+            $stats = $sshClient->exec($statCmd);
+            $stats = explode(";", $stats);
+            $resp["totCalls"] = $stats[12];
+            $resp["sucCalls"] = $stats[15];
+            $resp["fldCalls"] = $stats[17];
+
+            $userCsvCmd = "tail -1 /root/".$path.$submenu."_scenario_*_counts.csv";
+            $stats = $sshClient->exec($userCsvCmd);
+            $stats = explode(";", $stats);
         }
         else
         {
-            $res = explode(";", exec("tail -1 projects/inplace//".$path."/reg_scenario_*_counts.csv"));
+            $stats = explode(";", exec("tail -1 projects/inplace/".$path."/reg_scenario_*_counts.csv"));
         }
         $msgTags = explode(";", $msgTags);
         $msgTagsLen = sizeof($msgTags) - 1;
@@ -173,17 +180,16 @@
         {
             if(is_numeric($msgTags[$j]))
             {
-                $resp[$msgTags[$j]."_".$j] = $res[$i]."/".$res[$i + 3];
+                $resp[$msgTags[$j]."_".$j] = $stats[$i]."/".$stats[$i + 3];
                 $i = $i + 4;
             }
             else
             {
-                $resp[$msgTags[$j]."_".$j] = $res[$i];
+                $resp[$msgTags[$j]."_".$j] = $stats[$i];
                 $i = $i + 2;
             }
         }
     }
 
-    $finalResp = json_encode($resp);
-    echo $finalResp;
+    echo json_encode($resp);
 ?>

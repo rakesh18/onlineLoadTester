@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+
+<scenario name="Register UAC">
+<send>
+<![CDATA[
+
+REGISTER sip:[field4] SIP/2.0
+Via: SIP/2.0/UDP [field2]:[field3];rport;branch=[branch]
+From: [field0] <sip:[field0]@[field4]>;tag=[call_number]
+To: [field0] <sip:[field0]@[field4]>
+Call-ID: [call_id]
+CSeq: 1 REGISTER
+Contact: <sip:[field0]@[field2]:[field3]>;expires=864000
+Max-Forwards: 70
+Content-Length: 0
+User-Agent: sipp
+
+]]>
+</send>
+
+<recv response="403" optional="true" next="1">
+</recv>
+
+<recv response="503" optional="true" next="1">
+</recv>
+
+<recv response="500" optional="true" next="1">
+</recv>
+
+<recv response="401" auth="true">
+</recv>
+
+<send>
+<![CDATA[
+
+REGISTER sip:[field4] SIP/2.0
+Via: SIP/2.0/UDP [field2]:[field3];rport;branch=[branch]
+From: [field0] <sip:[field0]@[field4]>;tag=[call_number]
+To: [field0] <sip:[field0]@[field4]>
+Call-ID: [call_id]
+CSeq: 2 REGISTER
+Contact: <sip:[field0]@[field2]:[field3]>;expires=864000
+[field1]
+Max-Forwards: 70
+Content-Length: 0
+User-Agent: sipp
+
+]]>
+</send>
+
+<recv response="403" optional="true" next="1">
+</recv>
+
+<recv response="503" optional="true" next="1">
+</recv>
+
+<recv response="500" optional="true" next="1">
+</recv>
+
+<recv response="200" crlf="true">
+</recv>
+
+<label id="1" />
+
+</scenario>

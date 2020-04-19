@@ -23,7 +23,13 @@
     if($location === "external")
     {
         $sshClient = new Net_SSH2($clientIp);
-        if (!$sshClient->login($clientUsername, $clientPassword)) 
+        $try = 2;
+        while(($try > 0) && 
+              ($res = $sshClient->login($clientUsername, $clientPassword)) === FALSE)
+        {
+            $try -= 1;
+        }
+        if (!$res) 
         {
             $resp['message']    = "Client connect failure";
             $resp['statusFlag'] = "0";
