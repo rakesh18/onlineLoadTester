@@ -297,7 +297,7 @@
               console.log(result);
               if(result[0] == '<')
               {
-                alert("Server error");
+                alert("Client communication error.\nTry again later.");
                 location.reload();
               }
               var resp = JSON.parse(result);

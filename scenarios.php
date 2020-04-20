@@ -4,7 +4,8 @@
   include('globals.php');
   include('dbConfig.php');
   
-  $usersList   = "";
+  $origUsersList   = "";
+  $termUsersList = "";
   $borderIp    = "";
   $clientIp    = "";
   $origMsgTags = "";
@@ -19,7 +20,19 @@
   $endpoints   = "";
 
   if(isset($_COOKIE["userName"]))
+  {
     $userName = $_COOKIE['userName'];
+    if(strlen($userName) < 2)
+    {
+      echo "<h1>Login First</h1>";
+      exit(1);
+    }
+  }
+  else
+  {
+    echo "<h1>Login First</h1>";
+    exit(1);
+  }
   if(isset($_COOKIE["projectName"]))
     $projectName = $_COOKIE['projectName'];
   if(isset($_COOKIE["clientIp"]))
@@ -31,25 +44,62 @@
   if(isset($_COOKIE['borderIp']))
     $borderIp = $_COOKIE['borderIp'];
 
+  $userDir = "projects/".$location."/".$userName."_".$projectName."/".$network."/";
+
   if(isset($_GET['menu']))
   {
     $menu = $_GET['menu'];
-    echo '<div id = "topPane">
+    if($menu === "cases" ||
+       $menu === "scenarios" ||
+       $menu === "users" ||
+       $menu === "run")
+    {
+      echo '<div id = "topPane">
           </div>';
+    }
+    else
+    {
+      echo "<h1>Access Denied</h1>";
+      exit(1);
+    }
   }
   else
   {
-    exit("Server error");
+    echo "<h1>Access Denied</h1>";
+    exit(1);
   }
   if(isset($_GET['submenu']))
   {
     $submenu = $_GET['submenu'];
+    if(in_array($submenu, $submenus) === FALSE)
+    {
+      echo "<h1>Access Denied</h1>";
+      exit(1);
+    }
+    $userDir .= $submenu."/";
+  }
+  else if($menu === "scenarios" ||
+          $menu === "users" ||
+          $menu === "run")
+  {
+    echo "<h1>Access Denied</h1>";
+    exit(1);
   }
   if(isset($_GET['endpoints']))
   {
     $endpoints = $_GET['endpoints'];
+    if(in_array($endpoints, $terminals) === FALSE ||
+       $submenu !== "scenarios")
+    {
+      echo "<h1>Access Denied</h1>";
+      exit(1);
+    }
   }
-  $userDir = "projects/".$location."/".$userName."_".$projectName."/".$network."/".$submenu."/";
+  else if($menu === "scenarios")
+  {
+    echo "<h1>Access Denied</h1>";
+    exit(1);
+  }
 
   if($menu === "scenarios" ||
      $menu === "users")
@@ -163,10 +213,18 @@
                       ($submenu === "lte2imsmsg") ||
                       ($submenu === "lte2ltemsg"))
               {
-                echo '<div id = "basicCallEndPoints" class = "endPoints">
-                        <div id = "origEndUserOpt" class = "endPointsName">ORIGINATING</div>
-                        <div id = "termEndUserOpt" class = "endPointsName">TERMINATING</div>
-                      </div>';
+                echo '<div id = "basicCallEndPoints" class = "endPoints">';
+                if($endpoints === "originating")
+                {
+                  echo '<div id = "origEndUserOpt" class = "endPointsName" style = "border-radius: 5px;background-color: rgb(131, 131, 8);">ORIGINATING</div>
+                        <div id = "termEndUserOpt" class = "endPointsName">TERMINATING</div>';
+                }
+                else
+                {
+                  echo '<div id = "origEndUserOpt" class = "endPointsName">ORIGINATING</div>
+                  <div id = "termEndUserOpt" class = "endPointsName" style = "background-color: rgb(131, 131, 8);">TERMINATING</div>';
+                }
+                echo '</div>';
               }
             }
             else
@@ -229,6 +287,7 @@
                   <div class = "testCaseName" id = "one" value = "reg">BAISC REGISTRATION</div>
                   <div class = "testCaseName" id = "two" value = "call">BASIC CALL</div>
                   <div class = "testCaseName" id = "one" value = "msg">BASIC TEXT MESSAGE</div>
+                  <div class = "testCaseName" id = "one" value = "samvadcall">SAMVAD CALL</div>
                 </div>';
             }
             
@@ -240,12 +299,14 @@
                ($submenu === "ltereg") ||
                ($submenu === "imsreg"))
             {
+              $ep = substr($endpoints, 0, 4);
               echo '<div id = "regScenario">';
-                $scenarioFile = fopen($userDir . "orig_reg.xml", "r") or die("Unable to open file!");
+                $scenarioFile = fopen($userDir.$ep."_reg.xml", "r") or die("Unable to open file!");
                 $sendTag = 0;
                 $recvTag = 0;
                 $startCustomField = 0;
                 $labelIdActivated = 0;
+                $req = 0;
 
                 while(!feof($scenarioFile))
                 {
@@ -274,11 +335,12 @@
                         echo '<label style = "margin-left: 10px;"><b>Message Sent For Unexpected Responses&nbsp;&nbsp;&nbsp;<i class="fa fa-caret-down fa-1x"></i></b></label><br>';
                       }
                       echo '<div class = "origRegRqst">';
-                      $origMsgTags .= "REGISTER;";
+                      $origMsgTags .= "OREGISTER;";
                     }
                     else if(strpos($line, "</send") !== FALSE)
                     {
                       $sendTag = 0;
+                      $req = $req + 1;
                       echo '</div>';
                       echo '<p>* [field#] will be read from CSV file</p>';
                       echo '<div id = "newHeaderAdd">
@@ -298,20 +360,19 @@
                         $recvTag = 1;
                       }
 
-                      $respCode = str_replace("\"", "", explode(" ", explode("=", $line)[1])[0]);
+                      $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
 
-                      if(($respCode === "401") ||
-                         ($respCode === "200"))
+                      if(strpos($line, "optional") === FALSE)
                       {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" checked = "checked" onclick = "return false;" class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
+                        echo '<input type = "checkbox" id = "'.$req.$respCode.'mandatory" value = "'.$respCode.'" checked = "checked" onclick = "return false;" class = "respInput">
+                              <label for = "'.$req.$respCode.'mandatory" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
+                        $origMsgTags .= "I".$respCode.";";
                       }
                       else
                       {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" checked = "checked"  class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
+                        echo '<input type = "checkbox" id = "'.$req.$respCode.'optional" value = "'.$respCode.'" checked = "checked"  class = "respInput">
+                              <label for = "'.$req.$respCode.'optional" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
+                        $origMsgTags .= "I".$respCode.";";
                       }
                     }
                     else if(strpos($line, "<!--recv") !== FALSE)
@@ -322,15 +383,10 @@
                         $recvTag = 1;
                       }
 
-                      $respCode = str_replace("\"", "", explode(" ", explode("=", $line)[1])[0]);
+                      $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
 
-                      if(($respCode !== "401") &&
-                         ($respCode !== "200"))
-                      {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
-                      }
+                      echo '<input type = "checkbox" id = "'.$req.$respCode.'optional" value = "'.$respCode.'" class = "respInput">
+                            <label for = "'.$req.$respCode.'optional" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
                     }
                     else if(strpos($line, "<label") !== FALSE)
                     {
@@ -356,7 +412,7 @@
                   {
                     if(strpos($line, "Contact") !== FALSE)
                     {
-                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires"><br>';
+                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires" min = "300"><br>';
                     }
                     else if(strpos($line, "User-Agent") !== FALSE)
                     {
@@ -377,11 +433,12 @@
                   }
                 }
                 fclose($scenarioFile);
-                echo '<input type = "button" id = "scenarioGen" value = "GENERATE">';
+                echo '<input type = "button" class = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
             else if(($submenu === "call")        ||
                     ($submenu === "msg")         ||
+                    ($submenu === "samvadcall")  ||
                     ($submenu === "ims2imscall") ||
                     ($submenu === "ims2ltecall") ||
                     ($submenu === "lte2imscall") ||
@@ -393,12 +450,13 @@
             {
               $ep = substr($endpoints, 0, 4);
               echo '<div class = "testCaseName" id = "one" value = "callmsgreg">REGISTRATION</div>';
-              echo '<div id = "regScenario" style = "display: none;">';
+              echo '<div id = "regScenario" style = "display: block;">';
                 $scenarioFile = fopen($userDir.$ep."_reg.xml", "r") or die("Unable to open file!");
                 $sendTag = 0;
                 $recvTag = 0;
                 $startCustomField = 0;
                 $labelIdActivated = 0;
+                $req = 0;
 
                 while(!feof($scenarioFile))
                 {
@@ -427,11 +485,11 @@
                         echo '<label style = "margin-left: 10px;"><b>Message Sent For Unexpected Responses&nbsp;&nbsp;&nbsp;<i class="fa fa-caret-down fa-1x"></i></b></label><br>';
                       }
                       echo '<div class = "origRegRqst">';
-                      $origMsgTags .= "REGISTER;";
                     }
                     else if(strpos($line, "</send") !== FALSE)
                     {
                       $sendTag = 0;
+                      $req = $req + 1;
                       echo '</div>';
                       echo '<p>* [field#] will be read from CSV file</p>';
                       echo '<div id = "newHeaderAdd">
@@ -451,14 +509,17 @@
                         $recvTag = 1;
                       }
 
-                      $respCode = str_replace("\"", "", explode(" ", explode("=", $line)[1])[0]);
+                      $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
 
-                      if(($respCode === "401") ||
-                         ($respCode === "200"))
+                      if(strpos($line, "optional") === FALSE)
                       {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" checked = "checked" onclick = "return false;" class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
+                        echo '<input type = "checkbox" id = "'.$req.$respCode.'mandatory" value = "'.$respCode.'" checked = "checked" onclick = "return false;" class = "respInput">
+                              <label for = "'.$req.$respCode.'mandatory" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
+                      }
+                      else
+                      {
+                        echo '<input type = "checkbox" id = "'.$req.$respCode.'optional" value = "'.$respCode.'" class = "respInput">
+                              <label for = "'.$req.$respCode.'optional" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
                       }
                     }
                     else if(strpos($line, "<label") !== FALSE)
@@ -485,7 +546,7 @@
                   {
                     if(strpos($line, "Contact") !== FALSE)
                     {
-                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires"><br>';
+                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires" min = "300"><br>';
                     }
                     else if(strpos($line, "User-Agent") !== FALSE)
                     {
@@ -506,15 +567,17 @@
                   }
                 }
                 fclose($scenarioFile);
-                echo '<input type = "button" id = "scenarioGen" value = "GENERATE"><br><br>';
+                echo '<input type = "button" class = "scenarioGen" value = "GENERATE"><br><br>';
               echo '</div>';
               echo '<div class = "testCaseName" id = "two" value = "callmsg">CALL / MESSAGE</div>';
-              echo '<div id = "callmsgScenario" style = "display: none;">';
+              echo '<div id = "callmsgScenario" style = "display: block;">';
                 $scenarioFile = fopen($userDir.$ep."_scenario.xml", "r") or die("Unable to open file!");
                 $sendTag = 0;
                 $recvTag = 0;
                 $startCustomField = 0;
                 $labelIdActivated = 0;
+                $req = 0;
+                $msgTags = "";
 
                 while(!feof($scenarioFile))
                 {
@@ -540,15 +603,16 @@
                       if($labelIdActivated == 1)
                       {
                         $labelIdActivated = 0;
-                        echo '<label style = "margin-left: 10px;"><b>Message Sent For Unexpected Responses&nbsp;&nbsp;&nbsp;<i class="fa fa-caret-down fa-1x"></i></b></label><br>';
+                        echo '<label id = "optionalRqst" style = "margin-left: 10px;"><b>Message Sent For Unexpected Responses&nbsp;&nbsp;&nbsp;<i class="fa fa-caret-down fa-1x"></i></b></label><br>';
                       }
                       echo '<div class = "origRegRqst">';
-                      $origMsgTags .= "REGISTER;";
+                      $msgTags .= "OREQ;";
                     }
                     else if(strpos($line, "</send") !== FALSE)
                     {
                       $sendTag = 0;
                       $startCustomField = 0;
+                      $req = $req + 1;
                       echo '</div>';
                       echo '<p>* [field#] will be read from CSV file</p>';
                       echo '<div id = "newHeaderAdd">
@@ -567,21 +631,19 @@
                         echo '<div class = "origRegResp">';
                         $recvTag = 1;
                       }
+                      $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
 
-                      $respCode = str_replace("\"", "", explode(" ", explode("=", $line)[1])[0]);
-
-                      if(($respCode === "401") ||
-                         ($respCode === "200"))
+                      if(strpos($line, "optional") === FALSE)
                       {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" checked = "checked" onclick = "return false;" class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
+                        echo '<input type = "checkbox" id = "'.$req.$respCode.'mandatory" value = "'.$respCode.'" checked = "checked" onclick = "return false;" class = "respInput">
+                              <label for = "'.$req.$respCode.'mandatory" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
+                        $msgTags .= "I".$respCode.";";
                       }
                       else
                       {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" checked = "checked"  class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
+                        echo '<input type = "checkbox" id = "'.$req.$respCode.'optional" value = "'.$respCode.'" checked = "checked"  class = "respInput">
+                              <label for = "'.$req.$respCode.'optional" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
+                        $msgTags .= "I".$respCode.";";
                       }
                     }
                     else if(strpos($line, "<!--recv") !== FALSE)
@@ -592,19 +654,28 @@
                         $recvTag = 1;
                       }
 
-                      $respCode = str_replace("\"", "", explode(" ", explode("=", $line)[1])[1]);
+                      $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
 
-                      if(($respCode !== "401") &&
-                         ($respCode !== "200"))
-                      {
-                        echo '<input type = "checkbox" id = "reg'.$respCode.'resp" value = "'.$respCode.' '.$responses[$respCode].'" class = "respInput">
-                              <label for = "reg'.$respCode.'resp" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
-                        $origMsgTags .= $respCode.";";
-                      }
+                      echo '<input type = "checkbox" id = "'.$req.$respCode.'optional" value = "'.$respCode.'" class = "respInput">
+                            <label for = "'.$req.$respCode.'optional" class = "respLabel">'.$respCode.' '.$responses[$respCode].'</label>';
                     }
                     else if(strpos($line, "<label") !== FALSE)
                     {
                       $labelIdActivated = 1;
+                    }
+                    else if(strpos($line, "<nop") !== FALSE)
+                    {
+                      echo '<input type = "checkbox" id = "regRTPresp" value = "Enable RTP Flow" checked = "checked" class = "respInput">
+                            <label for = "regRTPresp" class = "respLabel">Enable RTP Flow</label>&nbsp;&nbsp;';
+                    }
+                    else if(strpos($line, "<!--nop") !== FALSE)
+                    {
+                      echo '<input type = "checkbox" id = "regRTPresp" value = "Enable RTP Flow" class = "respInput">
+                            <label for = "regRTPresp" class = "respLabel">Enable RTP Flow</label>&nbsp;&nbsp;';
+                    }
+                    else if(strpos($line, "<pause") !== FALSE)
+                    {
+                      echo 'Call Duration(in ms):&nbsp;&nbsp;<input id = "callDur" type = "number" value = "60000" min = "5000" style = "border-radius: 5px;padding-left: 5px;"><br>';
                     }
                     if(strpos($line, "</recv") !== FALSE)
                     {
@@ -626,7 +697,7 @@
                   {
                     if(strpos($line, "Contact") !== FALSE)
                     {
-                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires"><br>';
+                      echo 'Contact: &lt;sip:[field0]@[field2]:[field3]&gt;;expires=<input type = "number" value = "864000" class = "regExpires" min = "300"><br>';
                     }
                     else if(strpos($line, "User-Agent") !== FALSE)
                     {
@@ -649,20 +720,85 @@
                       else
                       {
                         $startCustomField = 0;
+                        if(strpos($msgTags, "REQ") !== FALSE)
+                        {
+                          $reqName = explode(" ", $line);
+                          if(strpos($reqName[0], "SIP") !== FALSE)
+                          {
+                            $msgTags = str_replace("REQ", $reqName[1], $msgTags);
+                          }
+                          else
+                          {
+                            $msgTags = str_replace("REQ", $reqName[0], $msgTags);
+                          }
+                        }
                         echo $line."<br>";
                       }
                     }
                   }
                 }
                 fclose($scenarioFile);
-                echo '<input type = "button" id = "scenarioGen" value = "GENERATE">';
+                $scenarioFile = fopen($userDir.$eps[$ep]."_scenario.xml", "r") or die("Unable to open file!");
+                $msgTags2 = "";
+
+                while(!feof($scenarioFile))
+                {
+                  $line = fgets($scenarioFile);
+                  if(strlen($line) == 1 ||
+                     substr($line, 0, 1) === ']' || 
+                     substr($line, 0, 1) === '\n' || 
+                     substr($line, 0, 1) === '\r' || 
+                     substr($line, 0, 1) === ' ')
+                  {
+                    continue;
+                  }
+                  if(substr($line, 0, 1) === "<")
+                  {
+                    if(strpos($line, "<send") !== FALSE)
+                    {
+                      $msgTags2 .= "OREQ;";
+                    }
+                    else if(strpos($line, "<recv") !== FALSE)
+                    {
+                      $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
+                      $msgTags2 .= "I".$respCode.";";
+                    }
+                    continue;
+                  }
+                  if(strpos($msgTags2, "REQ") !== FALSE)
+                  {
+                    $reqName = explode(" ", $line);
+                    if(strpos($reqName[0], "SIP") !== FALSE)
+                    {
+                      $msgTags2 = str_replace("REQ", $reqName[1], $msgTags2);
+                    }
+                    else
+                    {
+                      $msgTags2 = str_replace("REQ", $reqName[0], $msgTags2);
+                    }
+                  }
+                }
+                fclose($scenarioFile);
+                if($ep === "orig")
+                {
+                  $origMsgTags = $msgTags;
+                  $termMsgTags = $msgTags2;
+                }
+                else
+                {
+                  $origMsgTags = $msgTags2;
+                  $termMsgTags = $msgTags;
+                }
+                echo '<input type = "button" class = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
             echo '</div>';
           }
           else if($menu === "users")
           {
-            if($submenu === "reg")
+            if($submenu === "reg" ||
+               $submenu === "imsreg" ||
+               $submenu === "ltereg")
             {
               echo '<div class = "container" id = "users">';
                 echo '<br>';
@@ -691,7 +827,7 @@
               echo '<br>
               <div id = "addUserMsg">
                   <input type = "checkbox" id = "userRange" disabled = "disabled">
-                  <label for = "userRange">Check this to add range of users</label>
+                  <label for = "userRange">Selected for adding range of users</label>
               </div>
               <div id = "userCtrl">
                   <i id = "addUser" class="fa fa-plus fa-1x" aria-hidden="true" style = "cursor: pointer;">&nbsp;Add User</i>
@@ -709,9 +845,9 @@
                         </tr>
                       </thead>
                       <tbody id = "userDataBody">';
-                      $userFile = fopen($userDir . "reg_user.csv", "r") or die("Unable to open file!");
+                      $userFile = fopen($userDir."orig_user.csv", "r") or die("Unable to open file!");
                       $i = 0;
-                      $usersList = "";
+                      $origUsersList = "";
                       while(!feof($userFile))
                       {
                         $line = fgets($userFile);
@@ -720,7 +856,7 @@
 
                         if(strncmp($line, "SEQUENTIAL", 10) == 0)
                         {
-                          $usersList = "SEQUENTIALbr";
+                          $origUsersList = "SEQUENTIALbr";
                           continue;
                         }
 
@@ -729,13 +865,13 @@
                         foreach ($cols as $col)
                         {
                           echo '<td>' . $col . '</td>';
-                          $usersList .= $col . ";";
+                          $origUsersList .= $col . ";";
                           if(((int)$col) >= 50000 && ((int)$col) < 60000)
                           {
                             $origlp = $col;
                           }
                         }
-                        $usersList = substr_replace($usersList, "br", -2);
+                        $origUsersList = substr_replace($origUsersList, "br", -2);
                         echo '</tr>';
                         $i += 1;
                       }
@@ -744,21 +880,152 @@
                     </table>';
               echo '</div>';
             }
-            else if($submenu === "basiccall")
+            else if(($submenu === "call")        ||
+                    ($submenu === "msg")         ||
+                    ($submenu === "samvadcall")  ||
+                    ($submenu === "ims2imscall") ||
+                    ($submenu === "ims2ltecall") ||
+                    ($submenu === "lte2imscall") ||
+                    ($submenu === "lte2ltecall") ||
+                    ($submenu === "ims2imsmsg")  ||
+                    ($submenu === "ims2ltemsg")  ||
+                    ($submenu === "lte2imsmsg")  ||
+                    ($submenu === "lte2ltemsg"))
             {
+              echo '<div class = "container" id = "users">';
+                echo '<br>';
+                echo '<h2>Users</h2><br>';
+                echo '<div id = "userDetails">';
+                  echo '<h4>Originating</h4>';
+                  echo '<div class = "users" id = "users_0">';
+                    echo '<label id = "userLabel"> Username </label>
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          <label id = "passLabel"> Password </label>
+                          <br>
+                          <input type = "number" class = "uname" value = "">
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          <input type = "password" class = "pass" value = "">';
+                  echo '</div>';
+                  echo '<br><br>';
+                  echo '<h4>Terminating</h4>';
+                  echo '<div class = "users" id = "users_1">';
+                    echo '<label id = "userLabel"> Username </label>
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          <label id = "passLabel"> Password </label>
+                          <br>
+                          <input type = "number" class = "uname" value = "">
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          <input type = "password" class = "pass" value = ""><br>
+                          <input type = "number" class = "cname" value = ""  placeholder = "Called Number" style = "margin-top: 5px;"><br>
+                          <input type = "checkbox" id = "calledNumberSelect" style = "margin-top: 5px;">
+                          <label for = "calledNumberSelect" style = "margin-top: 5px;">Check if called number is same as username</label>';
+                  echo '</div>';
+                echo '</div>';
+                echo '<br>';
+                echo '
+                <div id = "userCtrl">
+                    <br><br><input type = "button" id = "generateCsv" value = "Generate">
+                </div>
+                <br>';
+                echo '<table class="table">
+                        <thead>
+                          <tr>
+                              <th>EndPoint</th>
+                              <th>UserName</th>
+                              <th>AuthHeader</th>
+                              <th>LocalIP</th>
+                              <th>LocalPort</th>
+                              <th>Server</th>
+                              <th>OtherEndUser</th>
+                          </tr>
+                        </thead>
+                        <tbody id = "userDataBody">';
+                        $userFile = fopen($userDir."orig_user.csv", "r") or die("Unable to open file!");
+                        $i = 0;
+                        $origUsersList = "";
+                        while(!feof($userFile))
+                        {
+                          $line = fgets($userFile);
+                          if(strlen($line) < 10)
+                            continue;
 
-            }
-            else if($submenu === "ivrscall")
-            {
-              
-            }
-            else if($submenu === "xfer")
-            {
-              
-            }
-            else if($submenu === "msg")
-            {
-              
+                          if(strncmp($line, "SEQUENTIAL", 10) == 0)
+                          {
+                            $origUsersList = "SEQUENTIALbr";
+                            continue;
+                          }
+
+                          $cols = explode(";", $line);
+                          echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)">';
+                          echo '<td>ORIG</td>';
+                          foreach ($cols as $col)
+                          {
+                            echo '<td>' . $col . '</td>';
+                            $origUsersList .= $col . ";";
+                            if(((int)$col) >= 50000 && ((int)$col) < 60000)
+                            {
+                              $origlp = $col;
+                            }
+                          }
+                          $origUsersList = substr_replace($origUsersList, "br", -2);
+                          echo '</tr>';
+                          $i += 1;
+                        }
+                        fclose($userFile);
+                        $userFile = fopen($userDir."term_user.csv", "r") or die("Unable to open file!");
+                        $termUsersList = "";
+                        while(!feof($userFile))
+                        {
+                          $line = fgets($userFile);
+                          if(strlen($line) < 10)
+                            continue;
+
+                          if(strncmp($line, "SEQUENTIAL", 10) == 0)
+                          {
+                            $termUsersList = "SEQUENTIALbr";
+                            continue;
+                          }
+
+                          $cols = explode(";", $line);
+                          echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)">';
+                          echo '<td>TERM</td>';
+                          foreach ($cols as $col)
+                          {
+                            echo '<td>' . $col . '</td>';
+                            $termUsersList .= $col . ";";
+                            if(((int)$col) >= 50000 && ((int)$col) < 60000)
+                            {
+                              $termlp = $col;
+                            }
+                          }
+                          $termUsersList = substr_replace($termUsersList, "br", -2);
+                          echo '</tr>';
+                          $i += 1;
+                        }
+                        fclose($userFile);
+                  echo '</tbody>
+                      </table>';
+              echo '</div>';
             }
           }
           else if($menu === "run")
@@ -930,7 +1197,7 @@
       var submenu = '<?php echo $submenu; ?>';
       var endpoints = '<?php echo $endpoints; ?>';
       var menu = '<?php echo $menu; ?>';
-      var userList = "";
+      var origUsersList = '<?php echo $origUsersList; ?>', termUsersList = '<?php echo $termUsersList; ?>';
       var origMsgTags = '<?php echo $origMsgTags; ?>';
       var termMsgTags = '<?php echo $termMsgTags; ?>';
       var statsUpdateTimer = "";
@@ -938,8 +1205,8 @@
       var ngcpeStatsTimer = "";
       var fsStatsTimer = "";
       var msStatsTimer = "";
-      var origpid = '<?php echo $origProcId; ?>';
-      var termpid = '<?php echo $termProcId; ?>';
+      var origProcId = '<?php echo $origProcId; ?>';
+      var termProcId = '<?php echo $termProcId; ?>';
       var startTime = new Date('<?php echo $startTime; ?>');
       var origlp = "<?php echo $origlp; ?>";
       var termlp = "<?php echo $termlp; ?>";
@@ -954,35 +1221,36 @@
 
       // Document START
       $(document).ready(function(){
-        if((submenu.localeCompare("reg") == 0) ||
-           (submenu.localeCompare("ltereg") == 0) ||
-           (submenu.localeCompare("imsreg") == 0))
-        {
-          $('#regEndPoints').show("slow");
-        }
-        else if((submenu.localeCompare("call") == 0) ||
-                (submenu.localeCompare("msg") == 0) ||
-                (submenu.localeCompare("ims2imscall") == 0) ||
-                (submenu.localeCompare("ims2ltecall") == 0) ||
-                (submenu.localeCompare("lte2imscall") == 0) ||
-                (submenu.localeCompare("lte2ltecall") == 0) ||
-                (submenu.localeCompare("ims2imsmag") == 0) ||
-                (submenu.localeCompare("ims2ltemsg") == 0) ||
-                (submenu.localeCompare("lte2imsmsg") == 0) ||
-                (submenu.localeCompare("lte2ltemsg") == 0))
-        {
-          $('#basicCallEndPoints').show("slow");
-        }
         if(menu.localeCompare("scenarios") == 0)
         {
+          if((submenu.localeCompare("reg") == 0) ||
+           (submenu.localeCompare("ltereg") == 0) ||
+           (submenu.localeCompare("imsreg") == 0))
+          {
+            $('#regEndPoints').show("slow");
+          }
+          else if((submenu.localeCompare("call") == 0) ||
+                  (submenu.localeCompare("msg") == 0) ||
+                  (submenu.localeCompare("ims2imscall") == 0) ||
+                  (submenu.localeCompare("ims2ltecall") == 0) ||
+                  (submenu.localeCompare("lte2imscall") == 0) ||
+                  (submenu.localeCompare("lte2ltecall") == 0) ||
+                  (submenu.localeCompare("ims2imsmag") == 0) ||
+                  (submenu.localeCompare("ims2ltemsg") == 0) ||
+                  (submenu.localeCompare("lte2imsmsg") == 0) ||
+                  (submenu.localeCompare("lte2ltemsg") == 0))
+          {
+            $('#basicCallEndPoints').show("slow");
+          }
           origMsgTags = '<?php echo $origMsgTags; ?>';
           localStorage.setItem("origMsgTags", origMsgTags);
           termMsgTags = '<?php echo $termMsgTags; ?>';
           localStorage.setItem("termMsgTags", termMsgTags);
+          console.log(origMsgTags+"\n"+termMsgTags);
         }
         else if(menu.localeCompare("users") == 0)
         {
-          userList = '<?php echo $usersList; ?>';
+          console.log(origUsersList+"\n"+termUsersList);
         }
         else if(menu.localeCompare("run") == 0)
         {
@@ -1265,9 +1533,9 @@
       {
         obj.remove();
       }
-      $('#scenarioGen').click(function(){
+      $('.scenarioGen').click(function(){
         var r;
-        if(origprocId.localeCompare(""))
+        if(origProcId.localeCompare(""))
         {
           r = confirm("Load running. Changes will effect after you restart load.\nContinue?");
           if(r == false)
@@ -1287,7 +1555,7 @@
            (submenu.localeCompare("ltereg") == 0) ||
            (submenu.localeCompare("imsreg") == 0))
         {
-          genRegScenario();
+          genRegScenario("R");
         }
         else if((submenu.localeCompare("call") == 0) ||
                 (submenu.localeCompare("msg") == 0) ||
@@ -1300,36 +1568,42 @@
                 (submenu.localeCompare("lte2imsmsg") == 0) ||
                 (submenu.localeCompare("lte2ltemsg") == 0))
         {
-          genCallMsgScenario();
+          if($(this).parent().attr('id').localeCompare("regScenario") == 0)
+          {
+            genRegScenario("R");
+          }
+          else
+          {
+            genCallMsgScenario("C");
+          }
         }
       });
-      function genRegScenario()
+      function genRegScenario(mark)
       {
         var headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
                        "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
       
-        var scenarioName = "<scenario name = 'Register Load Test'>\n";
+        var scenarioName = "<scenario name = 'Register Load Test'>\n\n";
         var scenarioNameEnd = "</scenario>\n";
 
         var sndTagStart = "<send>\n";
-        var sndTagEnd = "</send>\n";
-        var rcvTagStart = "<recv>\n";
-        var rcvTagEnd = "</recv>\n";
+        var sndTagEnd = "</send>\n\n";
 
-        var dataTagStart = "<![CDATA[\n\n";
-        var dataTagEnd = "\n]]>\n";
+        var dataTagStart = "<![CDATA[\n";
+        var dataTagEnd = "]]>\n";
 
         var label = 0;
         var resp = 1;
 
         var scenario = "";
 
+        var ep = endpoints.substring(0,4);
+
         scenario = headLine +
                    scenarioName;
 
-        msgTags = "";
-
         $('#regScenario').children().each(function () {
+          var respCode;
           if(this.className.localeCompare("origRegRqst") == 0)
           {
             var rqst = $(this).text();
@@ -1340,85 +1614,53 @@
                         rqst +
                         dataTagEnd +
                         sndTagEnd;
-            msgTags += "REGISTER;"; 
           }
           else if(this.className.localeCompare("origRegResp") == 0)
           {
-            if(this.firstChild.checked == true &&
-               this.firstChild.id.localeCompare("reg403resp") == 0 &&
-               resp == 1)
+            if(this.firstChild.checked == true)
             {
-              scenario += "<recv response = \"403\" optional = \"true\" next = \"1\">\n</recv>\n\n";
-              label = 1;
-              msgTags += "403;";
-            }
-            else if(this.firstChild.checked == false &&
-                    this.firstChild.id.localeCompare("reg403resp") == 0 &&
-                    resp == 1)
-            {
-              scenario += "<!--recv response = \"403\" optional = \"true\" next = \"1\">\n</recv-->\n\n";
-            }
-
-            if(this.firstChild.checked == true &&
-              this.firstChild.id.localeCompare("reg503resp") == 0 &&
-              resp == 1)
-            {
-              scenario += "<recv response = \"503\" optional = \"true\" next = \"1\">\n</recv>\n\n";
-              label = 1;
-              msgTags += "503;";
-            }
-            else if(this.firstChild.checked == false &&
-              this.firstChild.id.localeCompare("reg503resp") == 0 &&
-              resp == 1)
-            {
-              scenario += "<!--recv response = \"503\" optional = \"true\" next = \"1\">\n</recv-->\n\n";
-            }
-
-            if(this.firstChild.checked == true &&
-              this.firstChild.id.localeCompare("reg500resp") == 0 &&
-              resp == 1)
-            {
-              scenario += "<recv response = \"500\" optional = \"true\" next = \"1\">\n</recv>\n\n";
-              label = 1;
-              msgTags += "500;";
-            }
-            else if(this.firstChild.checked == false &&
-              this.firstChild.id.localeCompare("reg500resp") == 0 &&
-              resp == 1)
-            {
-              scenario += "<!--recv response = \"500\" optional = \"true\" next = \"1\">\n</recv-->\n\n";
-            }
-
-            if(this.firstChild.checked == true &&
-                    this.firstChild.id.localeCompare("reg401resp") == 0 &&
-                    resp == 1)
-            {
-              scenario += "<recv response = \"401\" auth = \"true\">\n</recv>\n\n";
-              resp = 2;
-              msgTags += "401;";
-            }
-            else if(this.firstChild.checked == true &&
-                    this.firstChild.id.localeCompare("reg200resp") == 0 &&
-                    resp == 2)
-            {
-              scenario += "<recv response = \"200\" crlf = \"true\">\n</recv>\n\n";
-              resp = 1;
-              if(label > 0)
+              respCode = this.firstChild.value;
+              if(this.firstChild.id.indexOf("optional") >= 0)
+              {
+                scenario += "<recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv>\n\n";
+                label = 1;
+              }
+              else
+              {
+                scenario += "<recv response=\""+respCode+"\"></recv>\n\n";
+              }
+              if(respCode.localeCompare("200") == 0 && label > 0)
               {
                 scenario += "<label id='" + label + "'/>\n";
+                label = 0;
               }
-              msgTags += "200;";
+            }
+            else if(this.firstChild.checked == false)
+            {
+              respCode = this.firstChild.value;
+              scenario += "<!--recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv-->\n\n";
+            }
+          }
+          else if(this.id.localeCompare("optionalRqst") == 0)
+          {
+            if(label > 0)
+            {
+              scenario += "<label id='" + label + "'/>\n";
+              label = 0;
             }
           }
         });
         scenario += scenarioNameEnd;
         console.log(scenario);
-        
+        /*
         $.ajax({
           url: 'generateRegScenario.php',
           type: 'POST',
           data: {
-              S: scenario
+              S: scenario,
+              SM: submenu,
+              EP: ep,
+              M: mark
           },
           success: function(result, status){
               var resp = JSON.parse(result);
@@ -1429,9 +1671,129 @@
               location.reload();
           },
           error: function(status, error) {
-              alert(status+","+error);
+              alert(status);
+          }
+        });*/
+      }
+      function genCallMsgScenario(mark)
+      {
+        var headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
+                       "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
+      
+        var scenarioName = "<scenario name = 'Register Load Test'>\n\n";
+        var scenarioNameEnd = "</scenario>\n";
+
+        var sndTagStart = "<send>\n";
+        var sndTagEnd = "</send>\n\n";
+
+        var dataTagStart = "<![CDATA[\n";
+        var dataTagEnd = "]]>\n";
+
+        var label = 0;
+        var resp = 1;
+
+        var scenario = "";
+        var ep = endpoints.substring(0,4);
+
+        var respCode;
+        var reqstEndPending = 0;
+
+        scenario = headLine +
+                   scenarioName;
+
+        $('#callmsgScenario').children().each(function () {
+          if(this.className.localeCompare("origRegRqst") == 0)
+          {
+            var rqst = $(this).text();
+            var expireVal = $(this).find('.regExpires').val();
+            rqst = rqst.replace("expires=", "expires=" + expireVal + "\n");
+            scenario += sndTagStart +
+                        dataTagStart +
+                        rqst;
+            reqstEndPending = 1;
+          }
+          else if(this.className.localeCompare("origRegSdp") == 0)
+          {
+            var rqst = $(this).text();
+            var expireVal = $(this).find('.regExpires').val();
+            rqst = rqst.replace("expires=", "expires=" + expireVal + "\n");
+            scenario += "\n" +
+                        rqst +
+                        dataTagEnd +
+                        sndTagEnd;
+            reqstEndPending = 0; 
+          }
+          else if(this.className.localeCompare("origRegResp") == 0)
+          {
+            if(this.firstChild.checked == true)
+            {
+              respCode = this.firstChild.value;
+              if(this.firstChild.id.indexOf("optional") >= 0)
+              {
+                scenario += "<recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv>\n\n";
+                label = 1;
+              }
+              else
+              {
+                scenario += "<recv response=\""+respCode+"\"></recv>\n\n";
+              }
+            }
+            else if(this.firstChild.checked == false)
+            {
+              respCode = this.firstChild.value;
+              scenario += "<!--recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv-->\n\n";
+            }
+          }
+          else if(this.id.localeCompare("newHeaderAdd") == 0)
+          {
+            if(reqstEndPending == 1)
+            {
+              scenario += dataTagEnd +
+                          sndTagEnd;
+              reqstEndPending = 0;
+            }
+          }
+          else if(this.id.localeCompare("optionalRqst") == 0)
+          {
+            if(label > 0)
+            {
+              scenario += "<label id='" + label + "'/>\n";
+              label = 0;
+            }
+          }
+          else if(this.id.localeCompare("regRTPresp") == 0)
+          {
+            scenario += '<nop><action><exec rtp_stream="test_5sec.wav" /></action></nop>\n';
+          }
+          else if(this.id.localeCompare("callDur") == 0)
+          {
+            scenario += '<pause milliseconds="'+this.value+'"/>\n\n';
           }
         });
+        scenario += scenarioNameEnd;
+        console.log(scenario);
+        /*
+        $.ajax({
+          url: 'generateRegScenario.php',
+          type: 'POST',
+          data: {
+              S: scenario,
+              SM: submenu,
+              EP: ep,
+              M: mark
+          },
+          success: function(result, status){
+              var resp = JSON.parse(result);
+              if(resp.statusFlag.localeCompare("0") == 0)
+              {
+                alert(resp.message);
+              }
+              location.reload();
+          },
+          error: function(status, error) {
+              alert(status);
+          }
+        });*/
       }
 
       /***********************************************************/
@@ -1462,6 +1824,16 @@
           }
         }
       });
+      $('#calledNumberSelect').click(function(){
+        if(this.checked == true)
+        {
+          $('.cname').attr('value', document.getElementsByClassName("uname")[1].value);
+        }
+        else
+        {
+          $('.cname').attr('value', "");
+        }
+      }); 
       $('i[id=addUser]').click(function () {
           var usersCnt = $("div[class*='users']").length;
           if(usersCnt == 2)
@@ -1517,23 +1889,27 @@
         {
           return false;
         }
-        var text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
-        var port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
-        console.log(port_number);
-        console.log(text);
-        userList = userList.replace(text, "");
-        console.log(userList);
+        var text, port_number;
+        var tempoUsersList = "", temptUsersList = "", ep = "";
 
         if(submenu.localeCompare("reg") == 0)
         {
-          if(userList.length > 12)
+          text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
+          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          console.log(text);
+          tempoUsersList = origUsersList.replace(text, "");
+          console.log(tempoUsersList);
+          if(tempoUsersList.length > 12)
           {
             $.ajax({
                 url: 'generateRegUserCsv.php',
                 type: 'POST',
                 data: {
-                    UL: userList,
-                    PR: "1"
+                    OUL: tempoUsersList,
+                    TUL: temptUsersList,
+                    PR: "1",
+                    SM: submenu
                 },
                 success: function(result, status){
                   console.log(result);
@@ -1542,12 +1918,18 @@
                   {
                     alert(resp.message);
                   }
-                  if(origlp.length == 0)
-                    origlp = resp.statusFlag;
-                  location.reload();
+                  else
+                  {
+                    if(resp.oport != null &&
+                       origlp.length == 0)
+                    {
+                      origlp = resp.oport;
+                    }
+                    location.reload();
+                  }
                 },
                 error: function(status, error) {
-                    alert(status+","+error);
+                    alert(status);
                 }
             });
           }
@@ -1557,8 +1939,10 @@
                 url: 'removeRegUserFromCsv.php',
                 type: 'POST',
                 data: {
-                    UL: userList,
-                    PN: port_number
+                    UL: tempoUsersList,
+                    PN: port_number,
+                    SM: submenu,
+                    EP: "O"
                 },
                 success: function(result, status){
                     var resp = JSON.parse(result);
@@ -1566,20 +1950,76 @@
                     {
                       alert(resp.message);
                     }
-                    location.reload();
+                    else
+                    {
+                      location.reload();
+                    }
                 },
                 error: function(status, error) {
-                    alert(status+","+error);
+                    alert(status);
                 }
             });
           }
         }
-          
+        else if(submenu.localeCompare("call") == 0)
+        {
+          text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
+          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          console.log(text);
+          if(text.indexOf("ORIG") >= 0)
+          {
+            text = text.replace(/ORIG;/g,"");
+            tempoUsersList = origUsersList.replace(text, "");
+            console.log(tempoUsersList);
+            ep = "O";
+          }
+          else if(text.indexOf("ORIG") >= 0)
+          {
+            text = text.replace(/TERM;/g,"");
+            tempoUsersList = termUsersList.replace(text, "");
+            console.log(tempoUsersList);
+            ep = "T";
+          }
+          $.ajax({
+            url: 'removeRegUserFromCsv.php',
+            type: 'POST',
+            data: {
+                UL: tempoUsersList,
+                PN: port_number,
+                SM: submenu,
+                EP: ep
+            },
+            success: function(result, status){
+                var resp = JSON.parse(result);
+                if(resp.statusFlag.localeCompare("0") == 0)
+                {
+                  alert(resp.message);
+                }
+                else
+                {
+                  location.reload();
+                }
+            },
+            error: function(status, error) {
+                alert(status);
+            }
+          });
+        } 
       }
 
       $('input[id=generateCsv]').click(function() {
         var r;
-        if(procId.localeCompare(""))
+        var U, P, U1, U2, P1, P2, CN;
+        var userRange = false;
+        var lip = '<?php echo $clientIp; ?>';
+        var olp = "", tlp = "";
+        var server = '<?php echo $borderIp; ?>';
+        var tempoUsersList = "SEQUENTIALbr", temptUsersList = "SEQUENTIALbr";
+        var portReq = 1;
+        var k = 0;
+
+        if(origProcId.localeCompare(""))
         {
           r = confirm("Load running. Changes will effect after you restart load.\nContinue?");
           if(r == false)
@@ -1595,80 +2035,160 @@
             return false;
           }
         }
-        if(submenu.localeCompare("reg") == 0)
         {
-          var usersCnt = $("input[class*='uname']").length;
-          var U, P, U1, U2;
-          var userRange = false;
-          var lip = '<?php echo $clientIp; ?>';
-          var lp = "";
-          var server = '<?php echo $borderIp; ?>';
-          var tempUsersList = "";
-          var portReq = 1;
-
           if(origlp.length == 0)
-            lp = "pr";
+            olp = "pr";
           else
-            lp = origlp;
+            olp = origlp;
+          if(termlp.length == 0)
+            tlp = "pr";
+          else
+            tlp = termlp;
 
           if(document.getElementById("userRange") != null)
             userRange = document.getElementById("userRange").checked;
 
-          $('#userDataBody').empty();
-
           if(userRange == true)
           {
+            tempoUsersList = origUsersList;
             U1 = document.getElementsByClassName("uname")[0].value;
             U2 = document.getElementsByClassName("uname")[1].value;
-            P = document.getElementsByClassName("pass")[0].value;
+            P1 = document.getElementsByClassName("pass")[0].value;
+            P2 = document.getElementsByClassName("pass")[1].value;
 
             if(U1.length == 0 ||
-              U2.length == 0 ||
-              P.length == 0)
+               U2.length == 0 ||
+               P1.length == 0 ||
+               P2.length == 0)
             {
               alert("Fields cannot be empty");
               return false;
             }
-            for(var i = U1, j = 0; i < U2;i++,j++)
+            if(P1 != P2)
+              k = 1;
+            else
+              k = 0;
+            for(var i = U1, P = P1; i <= U2;i++,P = P + k)
             {
-              tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
-            }
-            tempUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+lp+';'+server+"br";
-          }
-          else
-          {
-            for(var i = 0;i < (usersCnt - 1);i++)
-            {
-              U = document.getElementsByClassName("uname")[i].value;
-              P = document.getElementsByClassName("pass")[i].value;
-              if(U.length == 0 ||
-                P.length == 0)
+              if(origUsersList.indexOf(i) >= 0)
               {
-                alert("Fields cannot be empty");
-                return false;
+                continue;
               }
-              tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+              tempoUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+olp+';'+server+"br";
             }
-            U = document.getElementsByClassName("uname")[i].value;
-            P = document.getElementsByClassName("pass")[i].value;
+            portReq = 1;
+          }
+          else if(submenu.localeCompare("reg") == 0 ||
+                  submenu.localeCompare("imsreg") == 0 ||
+                  submenu.localeCompare("ltereg") == 0)
+          {
+            tempoUsersList = origUsersList;
+            U = document.getElementsByClassName("uname")[0].value;
+            P = document.getElementsByClassName("pass")[0].value;
             if(U.length == 0 ||
               P.length == 0)
             {
               alert("Fields cannot be empty");
               return false;
             }
-            tempUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+lp+';'+server+"br";
+            else if(origUsersList.indexOf(U) >= 0)
+            {
+              alert("User or Password alreday present.");
+              return false;
+            }
+            tempoUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+olp+';'+server+"br";
+            portReq = 1;
+          }
+          else
+          {
+            if(origUsersList.length > 12 &&
+               termUsersList.length > 12)
+            {
+              alert("Single user for each side allowed.");
+              return false;
+            }
+
+            U1 = document.getElementsByClassName("uname")[0].value;
+            P1 = document.getElementsByClassName("pass")[0].value;
+            if((U1.length == 0 ||
+                P1.length == 0) &&
+               origUsersList.length == 12)
+            {
+              alert("Orig side fields cannot be empty");
+              return false;
+            }
+
+            U2 = document.getElementsByClassName("uname")[1].value;
+            P2 = document.getElementsByClassName("pass")[1].value;
+            CN = document.getElementsByClassName("cname")[0].value;
+            if((U2.length == 0 ||
+                P2.length == 0 ||
+                CN.length == 0) &&
+               termUsersList.length == 12)
+            {
+              alert("Term side fields cannot be empty");
+              return false;
+            }
+            
+            if(origUsersList.length > 12)
+            {
+              if(U1.length != 0 ||
+                 P1.length != 0)
+              {
+                alert("Single user for ORIG side allowed.");
+                return false;
+              }
+              tempoUsersList = origUsersList;
+            }
+            else if(U1.localeCompare(U2) == 0 ||
+                    termUsersList.indexOf(U1) >= 0)
+            {
+              alert("Orig and Term users cannot be same");
+              return false;
+            }
+            else
+            {
+              tempoUsersList += U1+';[authentication username='+U1+' password='+P1+'];'+lip+';'+olp+';'+server+";"+CN+"br";
+            }
+
+            if(termUsersList.length > 12)
+            {
+              if(U2.length != 0 ||
+                 P2.length != 0)
+              {
+                alert("Single user for TERM side allowed.");
+                return false;
+              }
+              temptUsersList = termUsersList;
+            }
+            else if(U2.localeCompare(U1) == 0 ||
+                    origUsersList.split(U2).length >= 3)
+            {
+              alert("Term and Orig users cannot be same");
+              return false;
+            }
+            else
+            {
+              temptUsersList += U2+';[authentication username='+U2+' password='+P2+'];'+lip+';'+tlp+';'+server+"br";
+              if(origUsersList.length > 12)
+              {
+                var temp = origUsersList.substring(0, origUsersList.lastIndexOf(";"));
+                tempoUsersList = temp+";"+CN+"br";
+              }
+            }
+            portReq = 2;
           }
 
-          userList += tempUsersList;
-          console.log(userList);
-          
+          console.log(tempoUsersList+"\n"+temptUsersList);
+          /*
           $.ajax({
               url: 'generateRegUserCsv.php',
               type: 'POST',
               data: {
-                  UL: userList,
-                  PR: portReq
+                  OUL: tempoUsersList,
+                  TUL: temptUsersList,
+                  PR: portReq,
+                  SM: submenu
               },
               success: function(result, status){
                 console.log(result);
@@ -1677,14 +2197,19 @@
                 {
                   alert(resp.message);
                 }
-                if(origlp.length == 0)
-                  origlp = resp.statusFlag;
-                location.reload();
+                else
+                {
+                  if(resp.oport != null && origlp.length == 0)
+                    origlp = resp.oport;
+                  if(resp.tport != null && termlp.length == 0)
+                    termlp = resp.tport;
+                  location.reload();
+                }
               },
               error: function(status, error) {
-                  alert(status+","+error);
+                  alert(status);
               }
-          });
+          });*/
         }
 
         return false;

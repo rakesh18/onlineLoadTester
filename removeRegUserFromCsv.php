@@ -7,18 +7,21 @@
     $fileType       = "";
     $userList       = $_POST['UL'];
     $portNum        = $_POST['PN'];
+    $submenu        = $_POST['SM'];
+    $ep             = $_POST['EP'];
     $projectName    = $_COOKIE["projectName"];
     $userName       = $_COOKIE["userName"];
     $clientIp       = $_COOKIE["clientIp"];
     $clientUser     = $_COOKIE["clientUsername"];
     $clientPassword = $_COOKIE["clientPassword"];
     $location       = $_COOKIE["location"];
+    $network        = $_COOKIE["network"];
     $sessID         = session_id();
     $resp           = array("statusFlag" => "1", 
                             "message" => "User removed successfully.");
 
     $userName = $userName."_".$projectName;
-    $userDir  = $userName."_load/reg/";
+    $userDir  = $userName."/".$network."/".$submenu."/";
 
     $conn = new mysqli($server, $user, $pass, $db);
     if($conn->connect_error)
@@ -47,11 +50,19 @@
     $conn->close();
 
     $userList = str_replace("br", "\n", $userList);
-    $filename = "projects/".$location."/".$userDir . "reg_user.csv";
-    $extFilename = " /root/".$userDir."reg_user.csv";
+    if($ep === "O")
+    {
+        $filename = "projects/".$location."/".$userDir ."orig_user.csv";
+        $extFilename = "/root/".$userDir."orig_user.csv";
+    }
+    else
+    {
+        $filename = "projects/".$location."/".$userDir ."term_user.csv";
+        $extFilename = "/root/".$userDir."term_user.csv";
+    }
     $userFile = fopen($filename, "w") or die("Unable to open file!");
 
-    if($location === "ext")
+    /*if($location === "ext")
     {    
         $sshClient = new Net_SSH2($clientIp);
         if (!$sshClient->login($clientUsername, $clientPassword)) 
@@ -65,7 +76,7 @@
 
         $userCsvCmd = "echo '".$userList."' > ".$extFilename;
         $shellCmdRes = $sshClient->exec($userCsvCmd);
-    }
+    }*/
 
     fwrite($userFile, $userList);
     fclose($userFile);
