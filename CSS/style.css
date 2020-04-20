@@ -72,12 +72,17 @@ input.pass {
     border-radius: 5px;
 }
 
+input.cname {
+    width: 200px;
+    border-radius: 5px;
+}
+
 div#addUserMsg {
     margin-top: 20px;
     display: none;
 }
 div#userCtrl {
-    margin-top: 20px;
+    margin-top: -60px;
 }
 input#generateCsv {
     border-radius: 5px;
@@ -350,7 +355,7 @@ input.respInput[type="checkbox"]:focus + label.respLabel {
     border: 2px solid #e9a1ff;
 }
 
-input#scenarioGen {
+input.scenarioGen {
     margin-left: 5px;
     border-radius: 20px;
     font-size: 15px;

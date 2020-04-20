@@ -43,5 +43,5 @@ $output = $ssh->exec($runCmd);
 echo $output;
 */
 
-echo $responses[str_replace("\"", "", explode(" ", explode("=", '<recv response="403" optional="true" next="1">')[1])[0])];
+echo exec("ls -R projects/external/rocky_invites | wc -l | tail -1 | awk '{print $1}'");
 ?>

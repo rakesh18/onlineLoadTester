@@ -5,50 +5,62 @@
   include('dbConfig.php');
 
   $fileType       = "";
-  $userList       = $_POST['UL'];
+  $origUsersList  = $_POST['OUL'];
+  $termUsersList  = $_POST['TUL'];
   $portReq        = (int)$_POST['PR'];
+  $submenu        = $_POST['SM'];
   $projectName    = $_COOKIE["projectName"];
   $userName       = $_COOKIE["userName"];
   $clientIp       = $_COOKIE["clientIp"];
   $clientUsername = $_COOKIE["clientUsername"];
   $clientPassword = $_COOKIE["clientPassword"];
   $location       = $_COOKIE["location"];
+  $network        = $_COOKIE["network"];
   $sessID         = session_id();
   $resp           = array("statusFlag" => "1", 
                           "message" => "CSV file generated successfully");
   $port           = "";
 
   $userName = $userName."_".$projectName;
-  $userDir  = $userName."_load/reg/";
+  $userDir  = $userName."/".$network."/".$submenu."/";
 
-  if(strpos($userList, "pr") !== FALSE)
+  if(strlen($origUsersList) > 0)
   {
-    $conn = new mysqli($server, $user, $pass, $db);
-    if($conn->connect_error)
+    if(strpos($origUsersList, "pr") !== FALSE)
     {
-      $resp["message"]    = "Could not conect to database";
-      $resp["statusFlag"] = "0";
-      $serverResp = json_encode($resp);
-      echo $serverResp;
-      exit(1);
-    }
-
-    $tableName = str_replace(".", "_", $clientIp);
-
-    $sql = "update ".$tableName." set user = '".$userName."_reg"."', state = '".$sessID."' where user = '' limit ".$portReq.";";
-    if($conn->query($sql) === TRUE)
-    {
-      $sql = "select port_number from ".$tableName." where user = '".$userName."_reg"."' and state = '".$sessID."' limit ".$portReq.";";
-      $result = $conn->query($sql);
-      if($result->num_rows > 0) 
+      $conn = new mysqli($server, $user, $pass, $db);
+      if($conn->connect_error)
       {
-        while($row = $result->fetch_assoc())
+        $resp["message"]    = "Could not conect to database";
+        $resp["statusFlag"] = "0";
+        $serverResp = json_encode($resp);
+        echo $serverResp;
+        exit(1);
+      }
+
+      $tableName = str_replace(".", "_", $clientIp);
+
+      $sql = "update ".$tableName." set user = '".$userName."_".$network."_".$submenu."_orig', state = '".$sessID."' where user = '' limit 1;";
+      if($conn->query($sql) === TRUE)
+      {
+        $sql = "select port_number from ".$tableName." where user = '".$userName."_".$network."_".$submenu."_orig' and state = '".$sessID."' limit 1;";
+        $result = $conn->query($sql);
+        if($result->num_rows > 0) 
         {
-          $port = $row['port_number'];
-          $userList = str_replace("pr", "".$port, $userList);
-          $portReq -= 1;
-          if($portReq == 0)
-            break;
+          while($row = $result->fetch_assoc())
+          {
+            $port = $row['port_number'];
+            $origUsersList = str_replace("pr", "".$port, $origUsersList);
+          }
+        }
+        else
+        {
+          $resp["message"]    = "No free ports left";
+          $resp["statusFlag"] = "0";
+          $serverResp = json_encode($resp);
+          echo $serverResp;
+          $conn->close();
+          exit(1);
         }
       }
       else
@@ -60,45 +72,111 @@
         $conn->close();
         exit(1);
       }
-    }
-    else
-    {
-      $resp["message"]    = "No free ports left";
-      $resp["statusFlag"] = "0";
-      $serverResp = json_encode($resp);
-      echo $serverResp;
       $conn->close();
-      exit(1);
     }
-    $conn->close();
+    $origUsersList = str_replace("br", "\n", $origUsersList);
+    $filename = "projects/".$location."/".$userDir . "orig_user.csv";
+    $extFilename = " /root/".$userDir."orig_user.csv";
+    $userFile = fopen($filename, "w") or die("Unable to open file!");
+
+    if($location === "external")
+    {    
+      $sshClient = new Net_SSH2($clientIp);
+      if (!$sshClient->login($clientUsername, $clientPassword)) 
+      {
+        $resp["message"]    = "Login failed to client";
+        $resp["statusFlag"] = "0";
+        $serverResp = json_encode($resp);
+        echo $serverResp;
+        exit(1);
+      }
+
+      $userCsvCmd = "echo '".$origUsersList."' > ".$extFilename;
+      $shellCmdRes = $sshClient->exec($userCsvCmd);
+    }
+
+    fwrite($userFile, $origUsersList);
+    fclose($userFile);
+
+    $resp["oport"] = $port;
   }
 
-  $userList = str_replace("br", "\n", $userList);
-  $filename = "projects/".$location."/".$userDir . "reg_user.csv";
-  $extFilename = " /root/".$userDir."reg_user.csv";
-  $userFile = fopen($filename, "w") or die("Unable to open file!");
-
-  if($location === "external")
-  {    
-    $sshClient = new Net_SSH2($clientIp);
-    if (!$sshClient->login($clientUsername, $clientPassword)) 
+  if(strlen($termUsersList) > 0)
+  {
+    if(strpos($termUsersList, "pr") !== FALSE)
     {
-      $resp["message"]    = "Login failed to client";
-      $resp["statusFlag"] = "0";
-      $serverResp = json_encode($resp);
-      echo $serverResp;
-      exit(1);
+      $conn = new mysqli($server, $user, $pass, $db);
+      if($conn->connect_error)
+      {
+        $resp["message"]    = "Could not conect to database";
+        $resp["statusFlag"] = "0";
+        $serverResp = json_encode($resp);
+        echo $serverResp;
+        exit(1);
+      }
+
+      $tableName = str_replace(".", "_", $clientIp);
+
+      $sql = "update ".$tableName." set user = '".$userName."_".$network."_".$submenu."_orig', state = '".$sessID."' where user = '' limit 1;";
+      if($conn->query($sql) === TRUE)
+      {
+        $sql = "select port_number from ".$tableName." where user = '".$userName."_".$network."_".$submenu."_orig' and state = '".$sessID."' limit 1;";
+        $result = $conn->query($sql);
+        if($result->num_rows > 0) 
+        {
+          while($row = $result->fetch_assoc())
+          {
+            $port = $row['port_number'];
+            $termUsersList = str_replace("pr", "".$port, $termUsersList);
+          }
+        }
+        else
+        {
+          $resp["message"]    = "No free ports left";
+          $resp["statusFlag"] = "0";
+          $serverResp = json_encode($resp);
+          echo $serverResp;
+          $conn->close();
+          exit(1);
+        }
+      }
+      else
+      {
+        $resp["message"]    = "No free ports left";
+        $resp["statusFlag"] = "0";
+        $serverResp = json_encode($resp);
+        echo $serverResp;
+        $conn->close();
+        exit(1);
+      }
+      $conn->close();
+    }
+    $termUsersList = str_replace("br", "\n", $termUsersList);
+    $filename = "projects/".$location."/".$userDir."term_user.csv";
+    $extFilename = " /root/".$userDir."term_user.csv";
+    $userFile = fopen($filename, "w") or die("Unable to open file!");
+
+    if($location === "external")
+    {    
+      $sshClient = new Net_SSH2($clientIp);
+      if (!$sshClient->login($clientUsername, $clientPassword)) 
+      {
+        $resp["message"]    = "Login failed to client";
+        $resp["statusFlag"] = "0";
+        $serverResp = json_encode($resp);
+        echo $serverResp;
+        exit(1);
+      }
+
+      $userCsvCmd = "echo '".$termUsersList."' > ".$extFilename;
+      $shellCmdRes = $sshClient->exec($userCsvCmd);
     }
 
-    $userCsvCmd = "echo '".$userList."' > ".$extFilename;
-    $shellCmdRes = $sshClient->exec($userCsvCmd);
+    fwrite($userFile, $termUsersList);
+    fclose($userFile);
+
+    $resp["tport"] = $port;
   }
 
-  fwrite($userFile, $userList);
-  fclose($userFile);
-
-  $resp["statusFlag"] = $port;
-
-  $serverResp = json_encode($resp);
-  echo $serverResp;
+  echo json_encode($resp);
 ?>

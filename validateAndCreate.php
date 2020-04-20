@@ -20,6 +20,8 @@
   $clientIp          = "";
   $clientUsername    = "";
   $clientPassword    = "";
+  $sshClient         = "";
+  $makeDir           = 0;
   $resp              = array("statusFlag" => "1", 
                              "message" => "Success");
 
@@ -35,23 +37,49 @@
   $borderUsername = $_POST["borderUsername"];
   $borderPassword = $_POST["borderPassword"];
 
-  setcookie("userName", $userName, time() + (86400 * 30), "/");
-  setcookie("projectName", $projectName, time() + (86400 * 30), "/");
-  setcookie("location", $location, time() + (86400 * 30), "/");
-  setcookie("network", $network, time() + (86400 * 30), "/");
-  setcookie("clientUsername", $clientUsername, time() + (86400 * 30), "/");
-  setcookie("clientPassword", $clientPassword, time() + (86400 * 30), "/");
-  setcookie("borderIp", $borderIp, time() + (86400 * 30), "/");
-  setcookie("networkIp", $networkIp, time() + (86400 * 30), "/");
-  setcookie("borderUsername", $borderUsername, time() + (86400 * 30), "/");
-  setcookie("borderPassword", $borderPassword, time() + (86400 * 30), "/");
   if($location === "inplace")
     $clientIp = $systemIp;
-  setcookie("clientIp", $clientIp, time() + (86400 * 30), "/");
   
   $userDir = $userName."_".$projectName;
 
-  if(file_exists("projects/".$location."/".$userDir))
+  if($location === "external")
+  {
+    $try = 2;
+    $sshClient = new Net_SSH2($clientIp);
+    while($try > 0 &&
+          !($res = $sshClient->login($clientUsername, $clientPassword)))
+    {
+      $try = $try - 1;
+    }
+    if (!$res) 
+    {
+      $resp["message"]    = "Client is not in network.\nTry again later.";
+      $resp["statusFlag"] = "0";
+      $serverResp = json_encode($resp);
+      echo $serverResp;
+      exit(1);
+    }
+
+    $chckDir = "ls -R /root/".$userDir."/ | wc -l | tail -1 | awk '{print $1}'";
+    $res = $sshClient->exec($chckDir);
+    if($res < 120)
+    {
+      $makeDir = 1;
+    }
+  }
+
+  if(file_exists("projects/".$location."/".$userDir) && 
+     $location === "inplace")
+  {
+    $resp["message"] = "User with this project already exist.\nDo you wish to use this or create a new one?";
+    $resp["statusFlag"] = "2";
+    $serverResp = json_encode($resp);
+    echo $serverResp;
+    exit(1);
+  }
+  else if(file_exists("projects/".$location."/".$userDir) &&
+          $location === "external" &&
+          $makeDir == 0)
   {
     $resp["message"] = "User with this project already exist.\nDo you wish to use this or create a new one?";
     $resp["statusFlag"] = "2";
@@ -119,18 +147,10 @@
     $conn->close();
   }
 
-  if($location === "external")
+  if($location === "external" &&
+     $makeDir == 1)
   {
-    $sshClient = new Net_SSH2($clientIp);
-    if (!$sshClient->login($clientUsername, $clientPassword)) 
-    {
-      $resp["message"]    = "Client connect failure";
-      $resp["statusFlag"] = "0";
-      $serverResp = json_encode($resp);
-      echo $serverResp;
-      exit(1);
-    }
-
+    $shellCmdRes = $sshClient->exec($createScenarioCmd);
     $subnetwork = array_diff(scandir("defaultScenarios"), array('.', '..'));
     foreach ($subnetwork as $sn)
     {
@@ -188,6 +208,17 @@
     exec("chmod -R 777 "."projects/".$location."/".$userDir);
   }
   
-  $serverResp = json_encode($resp);
-  echo $serverResp;
+  setcookie("userName", $userName, time() + (86400 * 30), "/");
+  setcookie("projectName", $projectName, time() + (86400 * 30), "/");
+  setcookie("location", $location, time() + (86400 * 30), "/");
+  setcookie("network", $network, time() + (86400 * 30), "/");
+  setcookie("clientUsername", $clientUsername, time() + (86400 * 30), "/");
+  setcookie("clientPassword", $clientPassword, time() + (86400 * 30), "/");
+  setcookie("borderIp", $borderIp, time() + (86400 * 30), "/");
+  setcookie("networkIp", $networkIp, time() + (86400 * 30), "/");
+  setcookie("borderUsername", $borderUsername, time() + (86400 * 30), "/");
+  setcookie("borderPassword", $borderPassword, time() + (86400 * 30), "/");
+  setcookie("clientIp", $clientIp, time() + (86400 * 30), "/");
+
+  echo json_encode($resp);
 ?>

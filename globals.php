@@ -18,6 +18,15 @@
                        "502" => "Bad Gateway",
                        "503" => "Service Unavailable",
                        "604" => "Does Not Exist Anywhere",
+                       "ACK" => "",
                        "BYE" => "",
+                       "UPDATE" => "",
                        "INVITE" => "");
+
+    $submenus = array("reg", "msg", "call", "samvadcall", "ims2imscall", "ims2ltecall", "lte2imscall", "lte2ltecall", "ims2imsmsg", "ims2ltemsg", "lte2imsmsg", "lte2ltemsg", "imsreg", "ltereg");
+
+    $terminals = array("originating", "terminating");
+
+    $eps = array("orig" => "term",
+                 "term" => "orig");
 ?>
