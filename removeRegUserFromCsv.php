@@ -23,63 +23,70 @@
     $userName = $userName."_".$projectName;
     $userDir  = $userName."/".$network."/".$submenu."/";
 
-    $conn = new mysqli($server, $user, $pass, $db);
-    if($conn->connect_error)
+    $ports = explode("br", $portNum);
+    $eps = explode(";", $ep);
+    $i = 0;
+    foreach ($ports as $p)
     {
-        $resp["message"]    = "Could not conect to database";
-        $resp["statusFlag"] = "0";
-        $serverResp = json_encode($resp);
-        echo $serverResp;
-        exit(1);
-    }
-
-    $tableName = str_replace(".", "_", $clientIp);
-
-    $sql = "update ".$tableName." set user = '', state = '' where port_number = ".$portNum.";";
-    if($conn->query($sql) === TRUE)
-    {}
-    else
-    {
-        $resp["message"]    = "Failed to free the port.";
-        $resp["statusFlag"] = "0";
-        $serverResp = json_encode($resp);
-        echo $serverResp;
-        $conn->close();
-        exit(1);
-    }
-    $conn->close();
-
-    $userList = str_replace("br", "\n", $userList);
-    if($ep === "O")
-    {
-        $filename = "projects/".$location."/".$userDir ."orig_user.csv";
-        $extFilename = "/root/".$userDir."orig_user.csv";
-    }
-    else
-    {
-        $filename = "projects/".$location."/".$userDir ."term_user.csv";
-        $extFilename = "/root/".$userDir."term_user.csv";
-    }
-    $userFile = fopen($filename, "w") or die("Unable to open file!");
-
-    /*if($location === "ext")
-    {    
-        $sshClient = new Net_SSH2($clientIp);
-        if (!$sshClient->login($clientUsername, $clientPassword)) 
+        $conn = new mysqli($server, $user, $pass, $db);
+        if($conn->connect_error)
         {
-            $resp["message"]    = "Login failed";
+            $resp["message"]    = "Could not conect to database";
             $resp["statusFlag"] = "0";
             $serverResp = json_encode($resp);
             echo $serverResp;
             exit(1);
         }
 
-        $userCsvCmd = "echo '".$userList."' > ".$extFilename;
-        $shellCmdRes = $sshClient->exec($userCsvCmd);
-    }*/
+        $tableName = str_replace(".", "_", $clientIp);
 
-    fwrite($userFile, $userList);
-    fclose($userFile);
+        $sql = "update ".$tableName." set user = '', state = '' where port_number = ".$p.";";
+        if($conn->query($sql) === TRUE)
+        {}
+        else
+        {
+            $resp["message"]    = "Failed to free the port.";
+            $resp["statusFlag"] = "0";
+            $serverResp = json_encode($resp);
+            echo $serverResp;
+            $conn->close();
+            exit(1);
+        }
+        $conn->close();
+
+        $userList = str_replace("br", "\n", $userList);
+        if($eps[$i] === "O")
+        {
+            $filename = "projects/".$location."/".$userDir ."orig_user.csv";
+            $extFilename = "/root/".$userDir."orig_user.csv";
+        }
+        else
+        {
+            $filename = "projects/".$location."/".$userDir ."term_user.csv";
+            $extFilename = "/root/".$userDir."term_user.csv";
+        }
+        $userFile = fopen($filename, "w") or die("Unable to open file!");
+
+        /*if($location === "ext")
+        {    
+            $sshClient = new Net_SSH2($clientIp);
+            if (!$sshClient->login($clientUsername, $clientPassword)) 
+            {
+                $resp["message"]    = "Login failed";
+                $resp["statusFlag"] = "0";
+                $serverResp = json_encode($resp);
+                echo $serverResp;
+                exit(1);
+            }
+
+            $userCsvCmd = "echo '".$userList."' > ".$extFilename;
+            $shellCmdRes = $sshClient->exec($userCsvCmd);
+        }*/
+
+        fwrite($userFile, $userList);
+        fclose($userFile);
+        $i = $i + 1;
+    }
 
     $serverResp = json_encode($resp);
     echo $serverResp;

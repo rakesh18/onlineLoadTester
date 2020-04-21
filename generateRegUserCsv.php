@@ -79,7 +79,7 @@
     $extFilename = " /root/".$userDir."orig_user.csv";
     $userFile = fopen($filename, "w") or die("Unable to open file!");
 
-    if($location === "external")
+    /*if($location === "external")
     {    
       $sshClient = new Net_SSH2($clientIp);
       if (!$sshClient->login($clientUsername, $clientPassword)) 
@@ -93,7 +93,7 @@
 
       $userCsvCmd = "echo '".$origUsersList."' > ".$extFilename;
       $shellCmdRes = $sshClient->exec($userCsvCmd);
-    }
+    }*/
 
     fwrite($userFile, $origUsersList);
     fclose($userFile);
@@ -117,10 +117,10 @@
 
       $tableName = str_replace(".", "_", $clientIp);
 
-      $sql = "update ".$tableName." set user = '".$userName."_".$network."_".$submenu."_orig', state = '".$sessID."' where user = '' limit 1;";
+      $sql = "update ".$tableName." set user = '".$userName."_".$network."_".$submenu."_term', state = '".$sessID."' where user = '' limit 1;";
       if($conn->query($sql) === TRUE)
       {
-        $sql = "select port_number from ".$tableName." where user = '".$userName."_".$network."_".$submenu."_orig' and state = '".$sessID."' limit 1;";
+        $sql = "select port_number from ".$tableName." where user = '".$userName."_".$network."_".$submenu."_term' and state = '".$sessID."' limit 1;";
         $result = $conn->query($sql);
         if($result->num_rows > 0) 
         {
@@ -156,7 +156,7 @@
     $extFilename = " /root/".$userDir."term_user.csv";
     $userFile = fopen($filename, "w") or die("Unable to open file!");
 
-    if($location === "external")
+    /*if($location === "external")
     {    
       $sshClient = new Net_SSH2($clientIp);
       if (!$sshClient->login($clientUsername, $clientPassword)) 
@@ -170,7 +170,7 @@
 
       $userCsvCmd = "echo '".$termUsersList."' > ".$extFilename;
       $shellCmdRes = $sshClient->exec($userCsvCmd);
-    }
+    }*/
 
     fwrite($userFile, $termUsersList);
     fclose($userFile);

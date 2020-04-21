@@ -43,5 +43,6 @@ $output = $ssh->exec($runCmd);
 echo $output;
 */
 
-echo exec("ls -R projects/external/rocky_invites | wc -l | tail -1 | awk '{print $1}'");
+
+setcookie("rockyinvitemaxregorig", "REGISTER;403;401;REGISTER;500;200;", time() + (86400 * 30), "/");
 ?>

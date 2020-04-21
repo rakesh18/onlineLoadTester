@@ -100,21 +100,6 @@
         $procId = str_replace("\n","",$procId);
         $procId = str_replace("\r","",$procId);
 
-        /*
-        if(preg_match_all("/\[\w+.+\]/", $shellCmdRes, $matches))
-        {
-            $procId = substr($matches[0][0], 1, -1);
-        }
-        //echo $procId;exit(1);
-        $chckProc = "ps -ef | grep ".$procId;
-        $shellCmdRes = $sshClient->exec($chckProc);
-        //echo $shellCmdRes;exit(1);
-        if(substr_count($shellCmdRes, $procId) > 2)
-        {
-            $runFlag = 1;
-            $resp["procId"] = $procId;
-        }
-        */
         $checkProc = $sshClient->exec("ps o pid= -p ".$procId);
         if(strlen($checkProc) > 1)
         {

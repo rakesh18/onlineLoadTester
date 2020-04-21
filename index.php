@@ -34,7 +34,7 @@
             <div class = "col-md-4 inputGroupContainer">
             <div class = "input-group">
             <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
-            <input  name = "userName" placeholder = "User Name" class = "form-control" type = "text">
+            <input  name = "userName" placeholder = "User Name" class = "form-control" type = "text" maxlength="10">
               </div>
             </div>
           </div>
@@ -176,6 +176,7 @@
               validators: {
                 stringLength: {
                   min: 2,
+                  max: 10,
                 },
                 notEmpty: {
                   message: 'Please enter user name'
@@ -186,6 +187,7 @@
               validators: {
                 stringLength: {
                   min: 2,
+                  max: 10,
                 },
                 notEmpty: {
                   message: 'Please enter project name'

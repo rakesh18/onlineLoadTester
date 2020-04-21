@@ -23,7 +23,20 @@
                        "UPDATE" => "",
                        "INVITE" => "");
 
-    $submenus = array("reg", "msg", "call", "samvadcall", "ims2imscall", "ims2ltecall", "lte2imscall", "lte2ltecall", "ims2imsmsg", "ims2ltemsg", "lte2imsmsg", "lte2ltemsg", "imsreg", "ltereg");
+    $submenus = array("reg" => "REGISTRATION", 
+                      "msg" => "MESSAGE", 
+                      "call" => "CALL", 
+                      "samvadcall" => "SAMVAD CALL", 
+                      "ims2imscall" => "IMS-to-IMS CALL", 
+                      "ims2ltecall" => "IMS-to-LTE CALL", 
+                      "lte2imscall" => "LTE-to-IMS CALL", 
+                      "lte2ltecall" => "LTE-to-LTE CALL", 
+                      "ims2imsmsg" => "IMS-to-IMS MESSAGE", 
+                      "ims2ltemsg" => "IMS-to-LTE MESSAGE", 
+                      "lte2imsmsg" => "LTE-to-IMS MESSAGE", 
+                      "lte2ltemsg" => "LTE-to-LTE MESSAGE", 
+                      "imsreg" => "IMS REGISTRATION", 
+                      "ltereg" => "LTE REGISTRATION");
 
     $terminals = array("originating", "terminating");
 

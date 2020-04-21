@@ -24,13 +24,13 @@
     $userName = $_COOKIE['userName'];
     if(strlen($userName) < 2)
     {
-      echo "<h1>Login First</h1>";
+      echo "<h1>Access Denied</h1>";
       exit(1);
     }
   }
   else
   {
-    echo "<h1>Login First</h1>";
+    echo "<h1>Access Denied</h1>";
     exit(1);
   }
   if(isset($_COOKIE["projectName"]))
@@ -55,25 +55,31 @@
        $menu === "run")
     {
       echo '<div id = "topPane">
-          </div>';
+              <h4 style = "float: right;margin-right: 10px;margin-top: 10px;">Welcome '.$userName.'</h4>
+            </div>';
     }
     else
     {
-      echo "<h1>Access Denied</h1>";
+      echo "<h1>Oops!!! Your not allowed to enter here</h1>";
       exit(1);
     }
   }
   else
   {
-    echo "<h1>Access Denied</h1>";
+    echo "<h1>Oops!!! Your not allowed to enter here</h1>";
     exit(1);
   }
   if(isset($_GET['submenu']))
   {
     $submenu = $_GET['submenu'];
-    if(in_array($submenu, $submenus) === FALSE)
+    if($menu === "cases")
     {
-      echo "<h1>Access Denied</h1>";
+      echo "<h1>Oops!!! Your not allowed to enter here</h1>";
+      exit(1);
+    }
+    if(array_key_exists($submenu, $submenus) === FALSE)
+    {
+      echo "<h1>Ooops!!! Your not allowed to enter here</h1>";
       exit(1);
     }
     $userDir .= $submenu."/";
@@ -91,13 +97,13 @@
     if(in_array($endpoints, $terminals) === FALSE ||
        $submenu !== "scenarios")
     {
-      echo "<h1>Access Denied</h1>";
+      echo "<h1>Oops!!! Your not allowed to enter here</h1>";
       exit(1);
     }
   }
   else if($menu === "scenarios")
   {
-    echo "<h1>Access Denied</h1>";
+    echo "<h1>Oops!!! Your not allowed to enter here</h1>";
     exit(1);
   }
 
@@ -433,6 +439,9 @@
                   }
                 }
                 fclose($scenarioFile);
+                setcookie($userName.$projectName.$network.$submenu,
+                          $origMsgTags,
+                          time() + (86400 * 30), "/");
                 echo '<input type = "button" class = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
@@ -789,6 +798,12 @@
                   $origMsgTags = $msgTags2;
                   $termMsgTags = $msgTags;
                 }
+                setcookie($userName.$projectName.$network.$submenu."orig",
+                          $origMsgTags,
+                          time() + (86400 * 30), "/");
+                setcookie($userName.$projectName.$network.$submenu."term",
+                          $termMsgTags,
+                          time() + (86400 * 30), "/");
                 echo '<input type = "button" class = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
@@ -821,16 +836,16 @@
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    <input type = "password" class = "pass" value = "">';
+                    <input type = "number" class = "pass" value = "">';
                   echo '</div>';
               echo '</div>';
-              echo '<br>
+              echo '
               <div id = "addUserMsg">
                   <input type = "checkbox" id = "userRange" disabled = "disabled">
                   <label for = "userRange">Selected for adding range of users</label>
               </div>
               <div id = "userCtrl">
-                  <i id = "addUser" class="fa fa-plus fa-1x" aria-hidden="true" style = "cursor: pointer;">&nbsp;Add User</i>
+                  <br><i id = "addUser" class="fa fa-plus fa-1x" aria-hidden="true" style = "cursor: pointer;">&nbsp;Add User</i>
                   <br><br><input type = "button" id = "generateCsv" value = "Generate">
               </div>
               <br>';
@@ -914,7 +929,7 @@
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                          <input type = "password" class = "pass" value = "">';
+                          <input type = "number" class = "pass" value = "">';
                   echo '</div>';
                   echo '<br><br>';
                   echo '<h4>Terminating</h4>';
@@ -935,7 +950,7 @@
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                          <input type = "password" class = "pass" value = ""><br>
+                          <input type = "number" class = "pass" value = ""><br>
                           <input type = "number" class = "cname" value = ""  placeholder = "Called Number" style = "margin-top: 5px;"><br>
                           <input type = "checkbox" id = "calledNumberSelect" style = "margin-top: 5px;">
                           <label for = "calledNumberSelect" style = "margin-top: 5px;">Check if called number is same as username</label>';
@@ -944,7 +959,7 @@
                 echo '<br>';
                 echo '
                 <div id = "userCtrl">
-                    <br><br><input type = "button" id = "generateCsv" value = "Generate">
+                    <input type = "button" id = "generateCsv" value = "Generate" style = "margin-top: -20px;">
                 </div>
                 <br>';
                 echo '<table class="table">
@@ -1027,40 +1042,217 @@
                       </table>';
               echo '</div>';
             }
+            if(strlen($origUsersList) > 12 ||
+               strlen($termUsersList) > 12)
+            {
+              echo '<input type = "button" id = "removeAllUserRows" value = "Remove All" style = "border-radius: 5px;margin-left: 55px;">';
+            }
           }
           else if($menu === "run")
           {
-            if($submenu === "reg")
+            if($submenu === "reg" ||
+               $submenu === "imsreg" ||
+               $submenu === "ltereg")
             {
-              echo "<br><h2>&nbsp;&nbsp;Registration</h2><br>";
-              $userFile = $userDir."/reg_user.csv";
+              $userFile = $userDir."/orig_user.csv";
+              $totalLines = intval(exec("wc -l ".$userFile));
+              if($totalLines < 3)
+              {
+                echo "<h1>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</h1>";
+                exit(1);
+              }
+            }
+            else
+            {
+              $userFile = $userDir."/orig_user.csv";
+              $totalLines = intval(exec("wc -l ".$userFile));
+              if($totalLines < 3)
+              {
+                echo "<h1>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</h1>";
+                exit(1);
+              }
+              $userFile = $userDir."/term_user.csv";
               $totalLines = intval(exec("wc -l ".$userFile));
               if($totalLines < 3)
               {
                 echo "<p>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</p>";
                 exit(1);
               }
-
-              echo '<div id = "msg_tags" style = "height: 20%; margin-left: 20px; "></div><br><br>';
-            }
-            else if($submenu === "basiccall")
-            {
-              echo "<br><h2>&nbsp;&nbsp;Basic Call</h2><br>";
-            }
-            elseif($submenu === "ivrscall")
-            {
-              echo "<br><h2>&nbsp;&nbsp;IVRS Call</h2><br>";
-            }
-            else if($submenu === "xfer")
-            {
-              echo "<br><h2>&nbsp;&nbsp;Transfer</h2><br>";
-            }
-            else if($submenu === "msg")
-            {
-              echo "<br><h2>&nbsp;&nbsp;Message</h2><br>";
             }
 
-            echo '<div>';
+            echo '<br><h2>&nbsp;&nbsp;'.$submenus[$submenu].'</h2><br>';
+            echo '<div id = "msg_tags" style = "margin-left: 20px; position: relative;">';
+            $conn = new mysqli($server, $user, $pass, $db);
+            if($conn->connect_error)
+            {
+                echo "Could not connect to database";
+                exit(1);
+            }
+            $tableName = str_replace(".", "_", $clientIp);
+            $uname = $userName."_".$projectName."_".$network."_".$submenu."_".$tableName;
+            $sql   = "select start_time, orig_proc_id, term_proc_id, orig_msg_tags, term_msg_tags from load_status where user = '".$uname."' and status = 'running';";
+            $result = $conn->query($sql);
+
+            if($result->num_rows > 0) 
+            {
+              while($row = $result->fetch_assoc()) 
+              {
+                $startTime   = $row['start_time'];
+                $origProcId  = $row['orig_proc_id'];
+                $termProcId  = $row['term_proc_id'];
+                $origMsgTags = $row['orig_msg_tags'];
+                $termMsgTags = $row['term_msg_tags'];
+              }
+            }
+            $conn->close();
+            if($submenu === "reg" ||
+               $submenu === "imsreg" ||
+               $submenu === "ltereg")
+            {
+              if($origProcId === "")
+              {
+                if(isset($_COOKIE[$userName.$projectName.$network.$submenu."orig"]))
+                {
+                  $origMsgTags = $_COOKIE[$userName.$projectName.$network.$submenu."orig"];
+                }
+                else
+                {
+                  echo '<script>
+                          window.location.href = "index.php";
+                          window.location.replace("index.php");
+                        </script>';
+                }
+              }
+              $mts = explode(";", $origMsgTags);
+              $maxLen = 10;
+              foreach ($mts as $m)
+              {
+                $len = strlen($m);
+                if($len >= $maxLen)
+                  $maxLen = $len;
+              }
+
+              $width = 20 * $maxLen;
+              $i = 0;
+              echo '<h4>Originating</h4>';
+              echo '<table class = "table">';
+                echo '<thead>';
+                  echo '<tr>';
+                    foreach($mts as $m)
+                    {
+                      if(strlen($m) < 2)
+                        continue;
+
+                      if((int)($m) == 0)
+                      {
+                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                      }
+                      else
+                      {
+                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                      }
+                      $i = $i + 1;
+                    }
+                  echo '</tr>';
+                echo '</thead>';
+              echo '</table>';
+            }
+            else
+            {
+              if($origProcId === "")
+              {
+                if(isset($_COOKIE[$userName.$projectName.$network.$submenu."orig"]))
+                {
+                  $origMsgTags = $_COOKIE[$userName.$projectName.$network.$submenu."orig"];
+                }
+                else
+                {
+                  echo '<script>
+                          window.location.href = "index.php";
+                          window.location.replace("index.php");
+                        </script>';
+                }
+                if(isset($_COOKIE[$userName.$projectName.$network.$submenu."term"]))
+                {
+                  $termMsgTags = $_COOKIE[$userName.$projectName.$network.$submenu."orig"];
+                }
+                else
+                {
+                  echo '<script>
+                          window.location.href = "index.php";
+                          window.location.replace("index.php");
+                        </script>';
+                }
+              }
+              $mts = explode(";", $origMsgTags);
+              $maxLen = 10;
+              foreach ($mts as $m)
+              {
+                $len = strlen($m);
+                if($len >= $maxLen)
+                  $maxLen = $len;
+              }
+
+              $width = 20 * $maxLen;
+              $i = 0;
+              echo '<h4>Originating</h4>';
+              echo '<table class="table">';
+                echo '<thead>';
+                  echo '<tr>';
+                    foreach($mts as $m)
+                    {
+                      if(strlen($m) < 2)
+                        continue;
+
+                      if((int)($m) == 0)
+                      {
+                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                      }
+                      else
+                      {
+                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                      }
+                      $i = $i + 1;
+                    }
+                  echo '</tr>';
+                echo '</thead>';
+              echo '</table><br>';
+              $mts = explode(";", $termMsgTags);
+              $maxLen = 10;
+              foreach ($mts as $m)
+              {
+                $len = strlen($m);
+                if($len >= $maxLen)
+                  $maxLen = $len;
+              }
+
+              $width = 20 * $maxLen;
+              echo '<h4>Terminating</h4>';
+              echo '<table class="table">';
+                echo '<thead>';
+                  echo '<tr>';
+                    foreach($mts as $m)
+                    {
+                      if(strlen($m) < 2)
+                        continue;
+
+                      if((int)($m) == 0)
+                      {
+                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                      }
+                      else
+                      {
+                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                      }
+                      $i = $i + 1;
+                    }
+                  echo '</tr>';
+                echo '</thead>';
+              echo '</table>';
+            }
+            echo '</div><br><br>';
+
+            echo '<div style = "position: relative;">';
               echo '<table class = "table" style = "margin-top: -30px;"><thead><tr>';
               echo '<th style = "width: 290px;font-family: Font Awesome\ 5 Free;">';
               echo '<div id = "runParameters">';
@@ -1074,25 +1266,8 @@
                 echo '</div>';
                 echo '<br>';
 
-                $conn = new mysqli($server, $user, $pass, $db);
-                if($conn->connect_error)
+                if($origProcId !== "")
                 {
-                    echo "Could not connect to database";
-                    exit(1);
-                }
-                $tableName = str_replace(".", "_", $clientIp);
-                $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
-                $sql   = "select proc_id,start_time,msg_tags from load_status where user = '".$uname."' and status = 'running';";
-                $result = $conn->query($sql);
-
-                if($result->num_rows > 0) 
-                {
-                  while($row = $result->fetch_assoc()) 
-                  {
-                    $procId = $row['proc_id'];
-                    $startTime = $row['start_time'];
-                    $msgTags = $row['msg_tags'];
-                  }
                   echo '<input type = "button" value = "STOP" id = "runLoad">&nbsp;&nbsp;';
                   echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\'P\')">';
                   echo '<br><br><label id = "totTime" style = "display: none;">Total-Time: 0</label>';
@@ -1103,7 +1278,7 @@
                   echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\'P\')">';
                   echo '<br><br><label id = "totTime" style = "display: none;">Total-Time: 0</label>';
                 }
-                $conn->close();
+                
                 echo '<div id = "controlParameters" style = "position: relative;margin-top: 20px;display: none;">';
                   echo '<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\'+\')"></i>Increase by 1<br>';
                   echo '<i class="fa fa-arrow-circle-o-down fa-2x" aria-hidden="true" style = "margin-right: 20px;margin-top: 20px;margin-left: 5px; cursor: pointer;" onclick = "controlLoad(\'-\')"></i>Decrease by 1<br>';
@@ -1197,10 +1372,12 @@
       var submenu = '<?php echo $submenu; ?>';
       var endpoints = '<?php echo $endpoints; ?>';
       var menu = '<?php echo $menu; ?>';
-      var origUsersList = '<?php echo $origUsersList; ?>', termUsersList = '<?php echo $termUsersList; ?>';
+      var origUsersList = '<?php echo $origUsersList; ?>', 
+          termUsersList = '<?php echo $termUsersList; ?>';
       var origMsgTags = '<?php echo $origMsgTags; ?>';
       var termMsgTags = '<?php echo $termMsgTags; ?>';
-      var statsUpdateTimer = "";
+      var origStatsUpdateTimer = "",
+          termStatsUpdateTimer = "";
       var sbcsigStatsTimer = "";
       var ngcpeStatsTimer = "";
       var fsStatsTimer = "";
@@ -1218,6 +1395,7 @@
       var c5Ip, c5Username, c5Password;
       var network = '<?php echo $network; ?>';
       var stopTotTimer = 0;
+      var reloadRun = 0;
 
       // Document START
       $(document).ready(function(){
@@ -1254,178 +1432,144 @@
         }
         else if(menu.localeCompare("run") == 0)
         {
-          if(origMsgTags.length < 1)
-            origMsgTags = localStorage.getItem("origMsgTags");
-          if(msgTags.length > 0)
+          if(network.localeCompare("ims") == 0)
           {
-            var msg_tags = msgTags.split(";");
-            var maxlen = 10;
-            for(var i = 0;i < msg_tags.length-1;i++)
-            {
-              var len = msg_tags[i].length;
-              if(len >= maxlen)
-              {
-                maxlen = len;
-              }
-            }
-            var width = (maxlen * 20);
-            var row = "";
-            row += '<table class="table">';
-            row += '<thead>';
-            row += '<tr>';
-            for(var i = 0;i < msg_tags.length-1;i++)
-            {
-              var len = msg_tags[i].length;
-              if(isNaN(parseInt(msg_tags[i])))
-              {
-                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '_' + i + '" class = "msgTagsNameValueRqst">' + msg_tags[i] + '<br>0</div></center></th>';
-              }
-              else
-              {
-                row += '<th id = "msgTagsHead" style = "width: ' + width +'px;"><center><div id = "msgTags' + msg_tags[i] + '_' + i + '" class = "msgTagsNameValueResp">' + msg_tags[i] + '<br>0/0</div></center></th>';
-              }
-            }
-            row += '</tr></thead></table><br>';
-            $('#msg_tags').append(row);
-            if(network.localeCompare("ims") == 0)
-            {
 
-            }
-            else
+          }
+          else
+          {
+            chartsbcsig = new CanvasJS.Chart("sbcSigUsage",
             {
-              chartsbcsig = new CanvasJS.Chart("sbcSigUsage",
+              title:{
+                text: "SBC-SIG MEMORY & CPU USSAGE"
+              },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
               {
-                title:{
-                  text: "SBC-SIG MEMORY & CPU USSAGE"
-                },
-                axisX:{
-                  title: "Time(sec)",
-                },
-                axisY: [
-                {
-                  title: "MEM Usage",
-                  lineColor: "#369EAD",
-                },
-                {
-                  title: "CPU Usage",
-                  lineColor: "#C24642",
-                }
-                ],
-                data: [
-                {
-                  type: "line",
-                  axisYIndex: 0,
-                  dataPoints: [
-                  ]
-                },
-                {
-                  type: "line",
-                  axisYIndex: 1,
-                  dataPoints: [
-                  ]
-                }
-                ],
-              });
-              chartngcpe = new CanvasJS.Chart("ngcpeUsage",
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
               {
-                title:{
-                  text: "NGCPE MEMORY & CPU USSAGE"
-                },
-                axisX:{
-                  title: "Time(sec)",
-                },
-                axisY: [
-                {
-                  title: "MEM Usage",
-                  lineColor: "#369EAD",
-                },
-                {
-                  title: "CPU Usage",
-                  lineColor: "#C24642",
-                }
-                ],
-                data: [
-                {
-                  type: "line",
-                  axisYIndex: 0,
-                  dataPoints: [
-                  ]
-                },
-                {
-                  type: "line",
-                  axisYIndex: 1,
-                  dataPoints: [
-                  ]
-                }
-                ],
-              });
-              chartfs = new CanvasJS.Chart("fsUsage",
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
+              data: [
               {
-                title:{
-                  text: "FS MEMORY & CPU USSAGE"
-                },
-                axisX:{
-                  title: "Time(sec)",
-                },
-                axisY: [
-                {
-                  title: "MEM Usage",
-                  lineColor: "#369EAD",
-                },
-                {
-                  title: "CPU Usage",
-                  lineColor: "#C24642",
-                }
-                ],
-                data: [
-                {
-                  type: "line",
-                  axisYIndex: 0,
-                  dataPoints: [
-                  ]
-                },
-                {
-                  type: "line",
-                  axisYIndex: 1,
-                  dataPoints: [
-                  ]
-                }
-                ],
-              });
-              chartms = new CanvasJS.Chart("msUsage",
+                type: "line",
+                axisYIndex: 0,
+                dataPoints: [
+                ]
+              },
               {
-                title:{
-                  text: "MS MEMORY & CPU USSAGE"
-                },
-                axisX:{
-                  title: "Time(sec)",
-                },
-                axisY: [
-                {
-                  title: "MEM Usage",
-                  lineColor: "#369EAD",
-                },
-                {
-                  title: "CPU Usage",
-                  lineColor: "#C24642",
-                }
-                ],
-                data: [
-                {
-                  type: "line",
-                  axisYIndex: 0,
-                  dataPoints: [
-                  ]
-                },
-                {
-                  type: "line",
-                  axisYIndex: 1,
-                  dataPoints: [
-                  ]
-                }
-                ],
-              });
-            }
+                type: "line",
+                axisYIndex: 1,
+                dataPoints: [
+                ]
+              }
+              ],
+            });
+            chartngcpe = new CanvasJS.Chart("ngcpeUsage",
+            {
+              title:{
+                text: "NGCPE MEMORY & CPU USSAGE"
+              },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
+              data: [
+              {
+                type: "line",
+                axisYIndex: 0,
+                dataPoints: [
+                ]
+              },
+              {
+                type: "line",
+                axisYIndex: 1,
+                dataPoints: [
+                ]
+              }
+              ],
+            });
+            chartfs = new CanvasJS.Chart("fsUsage",
+            {
+              title:{
+                text: "FS MEMORY & CPU USSAGE"
+              },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
+              data: [
+              {
+                type: "line",
+                axisYIndex: 0,
+                dataPoints: [
+                ]
+              },
+              {
+                type: "line",
+                axisYIndex: 1,
+                dataPoints: [
+                ]
+              }
+              ],
+            });
+            chartms = new CanvasJS.Chart("msUsage",
+            {
+              title:{
+                text: "MS MEMORY & CPU USSAGE"
+              },
+              axisX:{
+                title: "Time(sec)",
+              },
+              axisY: [
+              {
+                title: "MEM Usage",
+                lineColor: "#369EAD",
+              },
+              {
+                title: "CPU Usage",
+                lineColor: "#C24642",
+              }
+              ],
+              data: [
+              {
+                type: "line",
+                axisYIndex: 0,
+                dataPoints: [
+                ]
+              },
+              {
+                type: "line",
+                axisYIndex: 1,
+                dataPoints: [
+                ]
+              }
+              ],
+            });
           }
           if($('#runLoad').val().localeCompare("STOP") == 0)
           {
@@ -1859,7 +2003,7 @@
                                       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
                                       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
                                       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
-                                      <input type = "password" class = "pass" value = "">\
+                                      <input type = "number" class = "pass" value = "">\
                                       </div>');
                       
           usersCnt += 1;
@@ -1871,7 +2015,6 @@
             document.getElementById("addUser").style.opacity = "0.1";
           }
       });
-
       function removeUserAdded(obj)
       {
           var id = obj.parentNode.id;
@@ -1881,133 +2024,6 @@
           document.getElementById("userRange").checked = false;
           document.getElementById("addUser").style.opacity = "1";
       }
-
-      function removeUserRow(obj)
-      {
-        var r = confirm("Do you want to proceed?");
-        if (r == false) 
-        {
-          return false;
-        }
-        var text, port_number;
-        var tempoUsersList = "", temptUsersList = "", ep = "";
-
-        if(submenu.localeCompare("reg") == 0)
-        {
-          text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
-          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
-          console.log(port_number);
-          console.log(text);
-          tempoUsersList = origUsersList.replace(text, "");
-          console.log(tempoUsersList);
-          if(tempoUsersList.length > 12)
-          {
-            $.ajax({
-                url: 'generateRegUserCsv.php',
-                type: 'POST',
-                data: {
-                    OUL: tempoUsersList,
-                    TUL: temptUsersList,
-                    PR: "1",
-                    SM: submenu
-                },
-                success: function(result, status){
-                  console.log(result);
-                  var resp = JSON.parse(result);
-                  if(resp.statusFlag.localeCompare("0") == 0)
-                  {
-                    alert(resp.message);
-                  }
-                  else
-                  {
-                    if(resp.oport != null &&
-                       origlp.length == 0)
-                    {
-                      origlp = resp.oport;
-                    }
-                    location.reload();
-                  }
-                },
-                error: function(status, error) {
-                    alert(status);
-                }
-            });
-          }
-          else
-          {
-            $.ajax({
-                url: 'removeRegUserFromCsv.php',
-                type: 'POST',
-                data: {
-                    UL: tempoUsersList,
-                    PN: port_number,
-                    SM: submenu,
-                    EP: "O"
-                },
-                success: function(result, status){
-                    var resp = JSON.parse(result);
-                    if(resp.statusFlag.localeCompare("0") == 0)
-                    {
-                      alert(resp.message);
-                    }
-                    else
-                    {
-                      location.reload();
-                    }
-                },
-                error: function(status, error) {
-                    alert(status);
-                }
-            });
-          }
-        }
-        else if(submenu.localeCompare("call") == 0)
-        {
-          text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
-          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.nextSibling.innerText;
-          console.log(port_number);
-          console.log(text);
-          if(text.indexOf("ORIG") >= 0)
-          {
-            text = text.replace(/ORIG;/g,"");
-            tempoUsersList = origUsersList.replace(text, "");
-            console.log(tempoUsersList);
-            ep = "O";
-          }
-          else if(text.indexOf("ORIG") >= 0)
-          {
-            text = text.replace(/TERM;/g,"");
-            tempoUsersList = termUsersList.replace(text, "");
-            console.log(tempoUsersList);
-            ep = "T";
-          }
-          $.ajax({
-            url: 'removeRegUserFromCsv.php',
-            type: 'POST',
-            data: {
-                UL: tempoUsersList,
-                PN: port_number,
-                SM: submenu,
-                EP: ep
-            },
-            success: function(result, status){
-                var resp = JSON.parse(result);
-                if(resp.statusFlag.localeCompare("0") == 0)
-                {
-                  alert(resp.message);
-                }
-                else
-                {
-                  location.reload();
-                }
-            },
-            error: function(status, error) {
-                alert(status);
-            }
-          });
-        } 
-      }
-
       $('input[id=generateCsv]').click(function() {
         var r;
         var U, P, U1, U2, P1, P2, CN;
@@ -2093,7 +2109,7 @@
             }
             else if(origUsersList.indexOf(U) >= 0)
             {
-              alert("User or Password alreday present.");
+              alert("User alreday present.");
               return false;
             }
             tempoUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+olp+';'+server+"br";
@@ -2146,6 +2162,11 @@
               alert("Orig and Term users cannot be same");
               return false;
             }
+            else if(CN.length == 0)
+            {
+              alert("Provide the Called number");
+              return false;
+            }
             else
             {
               tempoUsersList += U1+';[authentication username='+U1+' password='+P1+'];'+lip+';'+olp+';'+server+";"+CN+"br";
@@ -2180,7 +2201,7 @@
           }
 
           console.log(tempoUsersList+"\n"+temptUsersList);
-          /*
+        
           $.ajax({
               url: 'generateRegUserCsv.php',
               type: 'POST',
@@ -2209,10 +2230,219 @@
               error: function(status, error) {
                   alert(status);
               }
-          });*/
+          });
         }
 
         return false;
+      });
+      function removeUserRow(obj)
+      {
+        var r = confirm("Do you want to proceed?");
+        if (r == false) 
+        {
+          return false;
+        }
+        var text, port_number;
+        var tempoUsersList = "", temptUsersList = "", ep = "";
+
+        if(submenu.localeCompare("reg") == 0 ||
+           submenu.localeCompare("imsreg") == 0 ||
+           submenu.localeCompare("ltereg") == 0)
+        {
+          text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
+          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          console.log(text);
+          tempoUsersList = origUsersList.replace(text, "");
+          console.log(tempoUsersList);
+          if(tempoUsersList.length > 12)
+          {
+            $.ajax({
+                url: 'generateRegUserCsv.php',
+                type: 'POST',
+                data: {
+                    OUL: tempoUsersList,
+                    TUL: temptUsersList,
+                    PR: "1",
+                    SM: submenu
+                },
+                success: function(result, status){
+                  console.log(result);
+                  var resp = JSON.parse(result);
+                  if(resp.statusFlag.localeCompare("0") == 0)
+                  {
+                    alert(resp.message);
+                  }
+                  else
+                  {
+                    if(resp.oport != null &&
+                       origlp.length == 0)
+                    {
+                      origlp = resp.oport;
+                    }
+                    location.reload();
+                  }
+                },
+                error: function(status, error) {
+                    alert(status);
+                }
+            });
+          }
+          else
+          {
+            $.ajax({
+                url: 'removeRegUserFromCsv.php',
+                type: 'POST',
+                data: {
+                    UL: tempoUsersList,
+                    PN: port_number,
+                    SM: submenu,
+                    EP: "O"
+                },
+                success: function(result, status){
+                    var resp = JSON.parse(result);
+                    if(resp.statusFlag.localeCompare("0") == 0)
+                    {
+                      alert(resp.message);
+                    }
+                    else
+                    {
+                      location.reload();
+                    }
+                },
+                error: function(status, error) {
+                    alert(status);
+                }
+            });
+          }
+        }
+        else
+        {
+          text = obj.innerHTML.replace(/<td>/g,"").replace(/<\/td>/g,";").replace(/\n;/g,"br");
+          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          console.log(text);
+          if(text.indexOf("ORIG") >= 0)
+          {
+            text = text.replace(/ORIG;/g,"");
+            tempoUsersList = origUsersList.replace(text, "");
+            console.log(tempoUsersList);
+            ep = "O";
+          }
+          else if(text.indexOf("ORIG") >= 0)
+          {
+            text = text.replace(/TERM;/g,"");
+            tempoUsersList = termUsersList.replace(text, "");
+            console.log(tempoUsersList);
+            ep = "T";
+          }
+          $.ajax({
+            url: 'removeRegUserFromCsv.php',
+            type: 'POST',
+            data: {
+                UL: tempoUsersList,
+                PN: port_number,
+                SM: submenu,
+                EP: ep
+            },
+            success: function(result, status){
+                var resp = JSON.parse(result);
+                if(resp.statusFlag.localeCompare("0") == 0)
+                {
+                  alert(resp.message);
+                }
+                else
+                {
+                  location.reload();
+                }
+            },
+            error: function(status, error) {
+                alert(status);
+            }
+          });
+        } 
+      }
+      $('#removeAllUserRows').click(function(){
+        var r = confirm("Do you want to proceed?");
+        if (r == false) 
+        {
+          return false;
+        }
+        var obj, port_number, tempoUsersList;
+        if(submenu.localeCompare("reg") == 0 ||
+           submenu.localeCompare("imsreg") == 0 ||
+           submenu.localeCompare("ltereg") == 0)
+        {
+          obj = document.getElementById("users_row_0");
+          port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          tempoUsersList = "SEQUENTIALbr";
+          $.ajax({
+            url: 'removeRegUserFromCsv.php',
+            type: 'POST',
+            data: {
+                UL: tempoUsersList,
+                PN: port_number,
+                SM: submenu,
+                EP: "O"
+            },
+            success: function(result, status){
+                var resp = JSON.parse(result);
+                if(resp.statusFlag.localeCompare("0") == 0)
+                {
+                  alert(resp.message);
+                  return false;
+                }
+                else
+                {
+                  location.reload();
+                }
+            },
+            error: function(status, error) {
+                alert(status);
+                return false;
+            }
+          });
+        } 
+        else
+        {
+          obj = document.getElementById("users_row_0");
+          if(obj != null)
+            port_number = obj.firstChild.nextSibling.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          tempoUsersList = "SEQUENTIALbr";
+          obj = document.getElementById("users_row_1");
+          if(obj != null)
+            port_number += "br"+obj.firstChild.nextSibling.nextSibling.nextSibling.nextSibling.innerText;
+          console.log(port_number);
+          $.ajax({
+            url: 'removeRegUserFromCsv.php',
+            type: 'POST',
+            data: {
+                UL: tempoUsersList,
+                PN: port_number,
+                SM: submenu,
+                EP: "O;T"
+            },
+            success: function(result, status){
+              console.log(result);
+                var resp = JSON.parse(result);
+                if(resp.statusFlag.localeCompare("0") == 0)
+                {
+                  alert(resp.message);
+                  return false;
+                }
+                else
+                {
+                  location.reload();
+                }
+            },
+            error: function(status, error) {
+                alert(status);
+                return false;
+            }
+          });
+        }
       });
 
       /***********************************************************/
@@ -2617,9 +2847,10 @@
               type: "POST",
               url: "getClientLoadStats.php",
               data: {
-                PID: pid,
+                OPID: origProcId,
+                TPID: termProcId,
                 SM: submenu,
-                MT: msgTags
+                MT: origMsgTags+"_"+termMsgTags
               },
               success:function(data)
               {
@@ -2627,7 +2858,7 @@
                   if(data[0] == '<')
                   {
                     console.log("Connection issue");
-                    statsUpdateTimer = setTimeout(function(){
+                    origStatsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
                                       }, 5000);
                     return false;
@@ -2639,7 +2870,7 @@
                      resp.statusFlag.localeCompare("0") == 0)
                   {
                     alert(resp.message);
-                    clearTimeout(statsUpdateTimer);
+                    clearTimeout(origStatsUpdateTimer);
                   }
                   else
                   {
@@ -2666,13 +2897,13 @@
                         var totTime = curTime - startTime;
                         document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
                       }
-                      statsUpdateTimer = setTimeout(function(){
+                      origStatsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
                                       }, 5000);
                     }
                     else
                     {
-                      clearTimeout(statsUpdateTimer);
+                      clearTimeout(origStatsUpdateTimer);
                       stopLoad();
                     }
                   }
@@ -2759,7 +2990,7 @@
                   $('#pauseLoad').show();
                   $('#totTime').show();
                   $('#finalResult').hide();
-                  statsUpdateTimer = setTimeout(function(){
+                  origStatsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
                                       }, 5000);
                 }
@@ -2823,7 +3054,7 @@
               var curTime = new Date();
               var totTime = curTime - startTime;
               document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";          
-              clearTimeout(statsUpdateTimer);
+              clearTimeout(origStatsUpdateTimer);
               document.getElementById("runLoad").blur();
               $('#runLoad').attr('value', 'RUN');
               localStorage.setItem("runStatus", "stopped");
@@ -2848,6 +3079,7 @@
               }
               $('#serverStats').hide();
               $('#finalResult').show('slow');
+              reloadRun = 1;
             },
             error:function(data)
             {
@@ -2859,8 +3091,15 @@
       $('#runLoad').click(function(){
         if($(this).val().localeCompare("RUN") == 0)
         {
-          $('#totTime').hide();
-          startLoad();
+          if(reloadRun == 1)
+          {
+            alert("Reload the page to effect any changes if done to the scenarios or CSVs.");
+          }
+          else
+          {
+            $('#totTime').hide();
+            startLoad();
+          }
         }
         else
         {
@@ -2869,7 +3108,7 @@
           {
             return false;
           }
-          clearTimeout(statsUpdateTimer);
+          clearTimeout(origStatsUpdateTimer);
           stopLoad();
         }
       });
