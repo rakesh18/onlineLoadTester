@@ -11,21 +11,31 @@
     <link rel = 'stylesheet' href = 'https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css'>
     <link rel = 'stylesheet' href = 'https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css'>
     <link rel = 'stylesheet' href = 'https://cdnjs.cloudflare.com/ajax/libs/jquery.bootstrapvalidator/0.5.0/css/bootstrapValidator.min.css'>
-    <style>
-      div#clientDetails {
-        display: none;
-        margin: 0px 0px 0px 0px;
+    <?php
+      if(isset($_COOKIE['userName']) && strlen($_COOKIE['userName']) > 0)
+      {
+        echo '
+        <style>
+          div#clientDetails {
+            display: none;
+            margin: 0px 0px 0px 0px;
+          }
+          div#networkIp {
+            display: none;
+          }
+        </style>';
       }
-      div#networkIp {
-        display: none;
-      }
-    </style>
+    ?>
   </head>
 
   <body>
     <br>
     <div class = "container">
-      <form class = "well form-horizontal" action = "" id = "startForm" method = "POST" onsubmit = "submitForm()" enctype = "multipart/form-datam">
+    <?php
+    if(isset($_COOKIE['userName']) && strlen($_COOKIE['userName']) > 0)
+    {
+      echo '
+      <form class = "well form-horizontal" action = "" id = "startForm" method = "POST" onsubmit = "enterRoomForm()" enctype = "multipart/form-datam">
         <fieldset>
           <legend><center><h2><b>Welcome to Load Tester</b></h2></center></legend><br>
 
@@ -34,17 +44,7 @@
             <div class = "col-md-4 inputGroupContainer">
             <div class = "input-group">
             <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
-            <input  name = "userName" placeholder = "User Name" class = "form-control" type = "text" maxlength="10">
-              </div>
-            </div>
-          </div>
-
-          <div class = "form-group">
-            <label class = "col-md-4 control-label" >Project Name</label> 
-              <div class = "col-md-4 inputGroupContainer">
-              <div class = "input-group">
-            <span class = "input-group-addon"><i class = "glyphicon glyphicon-file"></i></span>
-            <input name = "projectName" placeholder = "Project Name" class = "form-control" type = "text">
+            <input  name = "userName" placeholder = "User Name" class = "form-control" type = "text" value = "'.$_COOKIE['userName'].'" readonly = "true">
               </div>
             </div>
           </div>
@@ -67,8 +67,10 @@
               <label class = "col-md-4 control-label" >Client IP</label> 
                 <div class = "col-md-4 inputGroupContainer">
                 <div class = "input-group">
-              <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
-              <input name = "clientIp" placeholder = "Client IP" class = "form-control" type = "text">
+                  <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+                  <input name = "clientIp" placeholder = "Client IP" class = "form-control" type = "text" list = "clients">
+                  <datalist id = "clients">
+                  </datalist>
                 </div>
               </div>
             </div>
@@ -90,6 +92,23 @@
               <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
               <input name = "clientPassword" placeholder = "Client Password" class = "form-control" type = "password">
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Project Name</label> 
+              <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+                <span class = "input-group-addon"><i class = "glyphicon glyphicon-file"></i></span>
+                <input name = "projectName" placeholder = "Project Name" class = "form-control" type = "text" list="projects">
+                <datalist id = "projects">';
+          $projs = array_filter(glob('projects/inplace/'.$_COOKIE['userName'].'_*'), 'is_dir');
+          foreach ($projs as $p)
+          {
+            echo '<option value = "'.str_replace('projects/inplace/'.$_COOKIE['userName'].'_', '', $p).'">';
+          }
+          echo '</datalist>
               </div>
             </div>
           </div>
@@ -154,8 +173,56 @@
             </div>
           </div>
 
+          <label class="col-md-4 control-label"></label>
+          <div class="col-md-4"><br>
+            <center><input id = "signOut" type = "button" value = "LogOut" style = "border-radius: 5px;background-color: #eb9316;"></center>
+          </div>
         </fieldset>
-      </form>
+      </form>';
+    }
+    else
+    {
+      echo '
+      <form class = "well form-horizontal" action = "" id = "signInSignUpForm" method = "POST" onsubmit = "userAuthForm()" enctype = "multipart/form-datam">
+        <fieldset>
+          <legend><center><h2><b>Welcome to Load Tester</b></h2></center></legend><br>
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Username</label> 
+            <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+                <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+                <input name = "username" placeholder = "Username" class = "form-control" type = "text">
+              </div>
+            </div>
+          </div>
+
+          <div class = "form-group">
+            <label class = "col-md-4 control-label" >Password</label> 
+            <div class = "col-md-4 inputGroupContainer">
+              <div class = "input-group">
+                <span class = "input-group-addon"><i class = "glyphicon glyphicon-user"></i></span>
+                <input name = "password" placeholder = "Password" class = "form-control" type = "password">
+              </div>
+            </div>
+          </div>
+          <input id = "mode" name = "mode" type = "text" style = "display: none">
+
+          <div class="form-group">
+            <label class = "col-md-4 control-label"></label>
+            <div class="col-md-4"><br>
+              <center><button id = "L" type="submit" class="btn btn-warning" onclick = "setMode(this)">Login<span class="glyphicon glyphicon-send"></span></button></center>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class = "col-md-4 control-label"></label>
+            <div class="col-md-4"><br>
+              <center><button id = "R" type="submit" class="btn btn-warning" onclick = "setMode(this)">Register<span class="glyphicon glyphicon-send"></span></button></center>
+            </div>
+          </div>
+        </fieldset>
+      </form>';
+    }
+    ?>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js" type="text/javascript"></script>
@@ -165,17 +232,263 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap-validator/0.4.5/js/bootstrapvalidator.min.js'></script>
     <script type = "text/javascript">
       $(document).ready(function() {
-        $('#startForm').bootstrapValidator({
+        <?php
+        if(isset($_COOKIE['userName']) && strlen($_COOKIE['userName']) > 0)
+        {
+          echo "
+          $('#startForm').bootstrapValidator({
+            feedbackIcons: {
+              valid: 'glyphicon glyphicon-ok',
+              invalid: 'glyphicon glyphicon-remove',
+              validating: 'glyphicon glyphicon-refresh'
+            },
+            fields: {
+              userName: {
+                validators: {
+                  stringLength: {
+                    min: 2,
+                    max: 10,
+                  },
+                  notEmpty: {
+                    message: 'Please enter user name'
+                  }
+                }
+              },
+              projectName: {
+                validators: {
+                  stringLength: {
+                    min: 2,
+                    max: 15,
+                  },
+                  notEmpty: {
+                    message: 'Please enter project name'
+                  }
+                }
+              },
+              location: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please select one location'
+                  }
+                }
+              },
+              clientIp: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter client ip'
+                  }
+                }
+              },
+              clientUsername: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter client user name'
+                  }
+                }
+              },
+              clientPassword: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter client password'
+                  }
+                }
+              },
+              network: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please select one network'
+                  }
+                }
+              },
+              borderIp: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter border ip'
+                  }
+                }
+              },
+              networkIp: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter network ip'
+                  }
+                }
+              },
+              borderUsername: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter border user name'
+                  }
+                }
+              },
+              borderPassword: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter border password'
+                  }
+                }
+              },
+            }
+          })
+        });
+        $('select[name=\"location\"]').change(function(){
+          if($(this).val() == 'external'){
+            $.ajax({
+              url: 'fetchClients.php',
+              type: 'POST',
+              success: function(result, status, xhr){
+                console.log(result);
+                $('#clients').append(result);
+                $('#clientDetails').show('slow');
+              },
+              error: function(status) {
+                  alert(status);
+                  location.reload();
+              }
+            });
+          }
+          else if($(this).val() == 'inplace'){
+            $.ajax({
+              url: 'fetchInProjects.php',
+              type: 'POST',
+              success: function(result, status, xhr){
+                console.log(result);
+                $('#projects').empty();
+                $('#projects').append(result);
+                $('#clientDetails').hide('slow');
+              },
+              error: function(result, status) {
+                  alert(status);
+                  location.reload();
+              }
+            });
+          }
+        });
+        $('input[name=\"clientIp\"]').bind('input', function(){
+          var client = $('input[name=\"clientIp\"]').val();
+          $.ajax({
+            url: 'fetchOutProjects.php',
+            type: 'POST',
+            data: {
+              C: client
+            },
+            success: function(result, status, xhr){
+              console.log(result);
+              $('#projects').empty();
+              $('#projects').append(result);
+            },
+            error: function(result, status) {
+                alert(status);
+                location.reload();
+            }
+          });
+        });
+        $('select[name=\"network\"]').change(function(){
+          if($(this).val() == 'ims'){
+            $('#networkIp').show('slow');
+          }
+          else if($(this).val() == 'max'){
+            $('#networkIp').hide('slow');
+          }
+        });
+
+        function enterRoomForm()
+        {
+          if($('form').data('submitted') === true)
+          {
+            //alert('form alreday submitted');
+          }
+          else
+          {
+            var form_data = new FormData(document.getElementById('startForm'));
+            //alert('Sending form details...');
+            $('form').data('submitted', true);
+            $.ajax({
+              url: 'validateAndCreate.php',
+              type: 'POST',
+              data: form_data,
+              processData: false,
+              contentType: false,
+              success: function(result, status, xhr){
+                console.log(result);
+                if(result[0] == '<')
+                {
+                  alert('Client communication error.\\nTry again later.');
+                  location.reload();
+                }
+                var resp = JSON.parse(result);
+                if(resp.statusFlag.localeCompare('1') == 0)
+                {
+                  window.location.href = 'scenarios.php?menu=cases';
+                  window.location.replace('scenarios.php?menu=cases');
+                }
+                else if(resp.statusFlag.localeCompare('2') == 0)
+                {
+                  var r = confirm(resp.message);
+                  if (r == true) 
+                  {
+                    window.location.href = 'scenarios.php?menu=cases';
+                    window.location.replace('scenarios.php?menu=cases');
+                  }
+                  else
+                  {
+                    location.reload();
+                  }
+                }
+                else
+                {
+                  alert(resp.message);
+                  location.reload();
+                }
+              },
+              error: function(status) {
+                  alert(status);
+                  location.reload();
+              }
+            });
+          }
+          return false;
+        }
+        $('#signOut').click(function(){
+          var r = confirm('Do you want to proceed?');
+          if(r == false)
+            return false;
+
+          $.ajax({
+            url: 'userAuthentication.php',
+            type: 'POST',
+            data: {
+              mode: 'logout'
+            },
+            success: function(result, status, xhr){
+              console.log(result);
+              if(result[0] == '<')
+              {
+                alert('Server Error.');
+              }
+              location.reload();
+            },
+            error: function(status) {
+                alert(status);
+                location.reload();
+            }
+          });
+        });";
+      }
+      else
+      {
+      echo "
+      $('#signInSignUpForm').bootstrapValidator({
           feedbackIcons: {
             valid: 'glyphicon glyphicon-ok',
             invalid: 'glyphicon glyphicon-remove',
             validating: 'glyphicon glyphicon-refresh'
           },
           fields: {
-            userName: {
+            username: {
               validators: {
                 stringLength: {
-                  min: 2,
+                  min: 5,
                   max: 10,
                 },
                 notEmpty: {
@@ -183,115 +496,40 @@
                 }
               }
             },
-            projectName: {
+            password: {
               validators: {
                 stringLength: {
-                  min: 2,
+                  min: 5,
                   max: 10,
                 },
                 notEmpty: {
-                  message: 'Please enter project name'
-                }
-              }
-            },
-            location: {
-              validators: {
-                notEmpty: {
-                  message: 'Please select one location'
-                }
-              }
-            },
-            clientIp: {
-              validators: {
-                notEmpty: {
-                  message: 'Please enter client ip'
-                }
-              }
-            },
-            clientUsername: {
-              validators: {
-                notEmpty: {
-                  message: 'Please enter client user name'
-                }
-              }
-            },
-            clientPassword: {
-              validators: {
-                notEmpty: {
                   message: 'Please enter client password'
-                }
-              }
-            },
-            network: {
-              validators: {
-                notEmpty: {
-                  message: 'Please select one network'
-                }
-              }
-            },
-            borderIp: {
-              validators: {
-                notEmpty: {
-                  message: 'Please enter border ip'
-                }
-              }
-            },
-            networkIp: {
-              validators: {
-                notEmpty: {
-                  message: 'Please enter network ip'
-                }
-              }
-            },
-            borderUsername: {
-              validators: {
-                notEmpty: {
-                  message: 'Please enter border user name'
-                }
-              }
-            },
-            borderPassword: {
-              validators: {
-                notEmpty: {
-                  message: 'Please enter border password'
                 }
               }
             },
           }
         })
       });
-
-      $('select[name="location"]').change(function(){
-        if($(this).val() == "external"){
-          $('#clientDetails').show("slow");
-        }
-        else if($(this).val() == "inplace"){
-          $('#clientDetails').hide("slow");
-        }
-      });
-      $('select[name="network"]').change(function(){
-        if($(this).val() == "ims"){
-          $('#networkIp').show("slow");
-        }
-        else if($(this).val() == "max"){
-          $('#networkIp').hide("slow");
-        }
-      });
-
-      function submitForm()
+      function setMode(obj)
+      {
+        document.getElementById('mode').value = obj.id;
+        return true;
+      }
+      function userAuthForm()
       {
         if($('form').data('submitted') === true)
         {
-          //alert("form alreday submitted");
+          //alert('form alreday submitted');
         }
         else
         {
-          var form_data = new FormData(document.getElementById("startForm"));
-          //alert("Sending form details...");
+          var form_data = new FormData(document.getElementById('signInSignUpForm'));
+          //alert('Sending form details...');
           $('form').data('submitted', true);
+          
           $.ajax({
-            url: "validateAndCreate.php",
-            type: "POST",
+            url: 'userAuthentication.php',
+            type: 'POST',
             data: form_data,
             processData: false,
             contentType: false,
@@ -299,27 +537,14 @@
               console.log(result);
               if(result[0] == '<')
               {
-                alert("Client communication error.\nTry again later.");
+                alert('Server Error.'+result);
                 location.reload();
               }
               var resp = JSON.parse(result);
-              if(resp.statusFlag.localeCompare("1") == 0)
+              if(resp.statusFlag.localeCompare('2') == 0)
               {
-                window.location.href = "scenarios.php?menu=cases";
-                window.location.replace("scenarios.php?menu=cases");
-              }
-              else if(resp.statusFlag.localeCompare("2") == 0)
-              {
-                var r = confirm(resp.message);
-                if (r == true) 
-                {
-                  window.location.href = "scenarios.php?menu=cases";
-                  window.location.replace("scenarios.php?menu=cases");
-                }
-                else
-                {
-                  location.reload();
-                }
+                window.location.href = 'index.php';
+                window.location.replace('index.php');
               }
               else
               {
@@ -334,7 +559,9 @@
           });
         }
         return false;
+      }";
       }
+      ?>
     </script>
   </body>
 </html>
