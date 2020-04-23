@@ -59,7 +59,7 @@
             {
                 $resp["statusFlag"] = "OFF";  
             }
-            $userCsvCmd = "tail -1 /root/".$clientStats;
+            $userCsvCmd = "tail -1 /root/".$origClientStats;
             $shellCmdRes = $sshClient->exec($userCsvCmd);
             $origRes = explode(";", $shellCmdRes);
         }
@@ -86,7 +86,43 @@
     }
     else
     {
-        $res = explode(";", exec("tail -1 projects/inplace/".$clientStats));
+        if($submenu === "reg" ||
+           $submenu === "imsreg" ||
+           $submenu === "ltereg")
+        {
+            $checkProc = exec("ps o pid= -p ".$oprocessId);
+            if(strlen($checkProc) > 1)
+            {
+                $resp["statusFlag"] = "ON"; 
+            }
+            else
+            {
+                $resp["statusFlag"] = "OFF";  
+            }
+            $userCsvCmd = "tail -1 projects/inplace/".$origClientStats;
+            $shellCmdRes = exec($userCsvCmd);
+            $origRes = explode(";", $shellCmdRes);
+        }
+        else
+        {
+            $ocheckProc = exec("ps o pid= -p ".$oprocessId);
+            $tcheckProc = exec("ps o pid= -p ".$tprocessId);
+            if(strlen($coheckProc) > 1 &&
+               strlen($tcheckProc) > 1)
+            {
+                $resp["statusFlag"] = "ON"; 
+            }
+            else
+            {
+                $resp["statusFlag"] = "OFF";  
+            }
+            $userCsvCmd = "tail -1 projects/inplace/".$origClientStats;
+            $shellCmdRes = exec($userCsvCmd);
+            $origRes = explode(";", $shellCmdRes);
+            $userCsvCmd = "tail -1 projects/inplace/".$termClientStats;
+            $shellCmdRes = exec($userCsvCmd);
+            $termRes = explode(";", $shellCmdRes);
+        }
     }
 
     $mts = explode("_", $msgTags);

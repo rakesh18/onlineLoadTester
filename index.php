@@ -338,6 +338,7 @@
               type: 'POST',
               success: function(result, status, xhr){
                 console.log(result);
+                $('#projects').empty();
                 $('#clients').append(result);
                 $('#clientDetails').show('slow');
               },
@@ -401,6 +402,7 @@
           else
           {
             var form_data = new FormData(document.getElementById('startForm'));
+            var params = {};
             //alert('Sending form details...');
             $('form').data('submitted', true);
             $.ajax({
@@ -414,31 +416,55 @@
                 if(result[0] == '<')
                 {
                   alert('Client communication error.\\nTry again later.');
+                  console.log(result);
                   location.reload();
                 }
                 var resp = JSON.parse(result);
-                if(resp.statusFlag.localeCompare('1') == 0)
-                {
-                  window.location.href = 'scenarios.php?menu=cases';
-                  window.location.replace('scenarios.php?menu=cases');
-                }
-                else if(resp.statusFlag.localeCompare('2') == 0)
-                {
-                  var r = confirm(resp.message);
-                  if (r == true) 
-                  {
-                    window.location.href = 'scenarios.php?menu=cases';
-                    window.location.replace('scenarios.php?menu=cases');
-                  }
-                  else
-                  {
-                    location.reload();
-                  }
-                }
-                else
+                if(resp.statusFlag.localeCompare('0') == 0)
                 {
                   alert(resp.message);
                   location.reload();
+                }
+                else if(resp.statusFlag.localeCompare('1') == 0)
+                {
+                  alert(resp.message);
+                  const roomForm = document.createElement('form');
+                  params['menu'] = 'cases';
+                  roomForm.method = 'POST';
+                  roomForm.action = 'scenarios.php';
+                  for (const key in params)
+                  {
+                    if(params.hasOwnProperty(key))
+                    {
+                      const hiddenField = document.createElement('input');
+                      hiddenField.type = 'hidden';
+                      hiddenField.name = key;
+                      hiddenField.value = params[key];
+                      roomForm.appendChild(hiddenField);
+                    }
+                  }
+                  document.body.appendChild(roomForm);
+                  roomForm.submit();
+                }
+                else if(resp.statusFlag.localeCompare('2') == 0)
+                {
+                  const roomForm = document.createElement('form');
+                  params['menu'] = 'cases';
+                  roomForm.method = 'POST';
+                  roomForm.action = 'scenarios.php';
+                  for (const key in params)
+                  {
+                    if(params.hasOwnProperty(key))
+                    {
+                      const hiddenField = document.createElement('input');
+                      hiddenField.type = 'hidden';
+                      hiddenField.name = key;
+                      hiddenField.value = params[key];
+                      roomForm.appendChild(hiddenField);
+                    }
+                  }
+                  document.body.appendChild(roomForm);
+                  roomForm.submit();
                 }
               },
               error: function(status) {
@@ -450,7 +476,7 @@
           return false;
         }
         $('#signOut').click(function(){
-          var r = confirm('Do you want to proceed?');
+          var r = confirm('Are you sure want to log out?');
           if(r == false)
             return false;
 

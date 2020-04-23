@@ -12,7 +12,18 @@
 
     if($mode === "logout")
     {
-        setcookie("userName", "", time() - 1, "/");
+        $time = time();
+        setcookie("userName",       "", $time - 1, "/");
+        setcookie("projectName",    "", $time - 1, "/");
+        setcookie("location",       "", $time - 1, "/");
+        setcookie("network",        "", $time - 1, "/");
+        setcookie("clientUsername", "", $time - 1 , "/");
+        setcookie("clientPassword", "", $time - 1, "/");
+        setcookie("borderIp",       "", $time - 1, "/");
+        setcookie("networkIp",      "", $time - 1, "/");
+        setcookie("borderUsername", "", $time - 1, "/");
+        setcookie("borderPassword", "", $time - 1, "/");
+        setcookie("clientIp",       "", $time - 1, "/");
         exit(1);
     }
     $conn = new mysqli($server, $user, $pass, $db);

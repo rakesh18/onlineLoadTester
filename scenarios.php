@@ -44,18 +44,19 @@
   if(isset($_COOKIE['borderIp']))
     $borderIp = $_COOKIE['borderIp'];
 
-  $userDir = "projects/".$location."/".$userName."_".$projectName."/".$network."/";
+  $tableName = str_replace(".", "_", $clientIp);
+  $userDir   = "projects/".$location."/".$tableName."/".$userName."_".$projectName."/".$network."/";
 
-  if(isset($_GET['menu']))
+  if(isset($_POST['menu']))
   {
-    $menu = $_GET['menu'];
+    $menu = $_POST['menu'];
     if($menu === "cases" ||
        $menu === "scenarios" ||
        $menu === "users" ||
        $menu === "run")
     {
       echo '<div id = "topPane">
-              <h4 style = "float: right;margin-right: 10px;margin-top: 10px;">Welcome '.$userName.'</h4>
+              <h4 style = "float: right;margin-right: 10px;margin-top: 10px;">Welcome <img src = "user_icon.png" height = "35px" width = "35px" id = "userIcon" style = "cursor: pointer;"></h4>
             </div>';
     }
     else
@@ -69,9 +70,9 @@
     echo "<h1>Oops!!! Your not allowed to enter here</h1>";
     exit(1);
   }
-  if(isset($_GET['submenu']))
+  if(isset($_POST['submenu']))
   {
-    $submenu = $_GET['submenu'];
+    $submenu = $_POST['submenu'];
     if($menu === "cases")
     {
       echo "<h1>Oops!!! Your not allowed to enter here</h1>";
@@ -91,9 +92,9 @@
     echo "<h1>Access Denied</h1>";
     exit(1);
   }
-  if(isset($_GET['endpoints']))
+  if(isset($_POST['endpoints']))
   {
-    $endpoints = $_GET['endpoints'];
+    $endpoints = $_POST['endpoints'];
     if(in_array($endpoints, $terminals) === FALSE ||
        $submenu !== "scenarios")
     {
@@ -116,7 +117,6 @@
         echo "Could not connect to database";
         exit(1);
     }
-    $tableName = str_replace(".", "_", $clientIp);
     $uname = $userName."_".$projectName."_".$network."_".$submenu."_".$tableName;
     $sql   = "select orig_proc_id from load_status where user = '".$uname."' and status = 'running';";
     $result = $conn->query($sql);
@@ -1396,6 +1396,9 @@
       var network = '<?php echo $network; ?>';
       var stopTotTimer = 0;
       var reloadRun = 0;
+      var logoutModal;
+      var userName = '<?php echo $userName; ?>';
+      var projectName = '<?php echo $projectName; ?>';
 
       // Document START
       $(document).ready(function(){
@@ -1585,7 +1588,77 @@
             updateClientLoadStats();                  
           }
         }
+        createLogoutModal();
       });
+
+      /***********************************************************/
+      // Top Menu
+      /***********************************************************/
+      $('#userIcon').click(function(){
+        showLogoutModal(this);
+      });
+      function createLogoutModal()
+      {
+        logoutModal = document.createElement('div');
+        logoutModal.style.cssText =
+          'position:fixed; background:#fdfafa; color:white;z-index:10000;'
+          + 'border-radius:15px;box-shadow:0 0 3px 3px rgba(0,0,0,.2);'
+          + 'opacity:0;transition:opacity 0.3s;height:280px;width:300px;';
+        logoutModal.innerHTML = '<center><i class="fa fa-user-circle fa-5x" aria-hidden="true" style="margin-top: 10px; auto;color:#4a80d2;"></i></center>'
+                              + '<center><p style="color:#000000;font-size: 30px;margin-top: 5px;margin-bottom: 5px;"><b>'+userName+'</b></p></center>'
+                              + '<center><p style="color:#000000;font-size: 20px;margin-top:5px;margin-bottom:5px;">Project: '+projectName+'</p></center>'
+                              + '<center><i class="fa fa-sign-out fa-3x" aria-hidden="true" style="margin-top: 10px; cursor: pointer; color:red;"onclick="userLogout()"></i></center>'
+                              + '<center><p style="text-align: center;color: #751006d9;margin-top: 2px;cursor: pointer;" onclick="userLogout()">LogOut</p></center>';
+        document.body.appendChild(logoutModal);
+      }
+      function showLogoutModal(obj)
+      {
+        if(logoutModal.style.opacity == 0)
+        {
+          logoutModal.style.left = (obj.getBoundingClientRect().left - 260) + 'px';
+          logoutModal.style.top = obj.getBoundingClientRect().top + 50 + 'px';
+          logoutModal.style.opacity = 1;
+        }
+        else
+        {
+          logoutModal.style.opacity = 0;
+        }
+      }
+      $('#bottomPane').click(function(){
+        if(logoutModal.style.opacity == 1)
+        {
+          logoutModal.style.opacity = 0;
+        }
+      });
+      function userLogout()
+      {
+        var r = confirm("Are you sure want to log out?");
+        if(r == false)
+        {
+          return false;
+        }
+        $.ajax({
+          url: 'userAuthentication.php',
+          type: 'POST',
+          data: {
+              mode: "logout"
+          },
+          success: function(result, status){
+              if(result[0] == "<")
+              {
+                alert(resp.message);
+              }
+              else
+              {
+                window.location.href = "index.php";
+                window.location.replace("index.php");
+              }
+          },
+          error: function(status, error) {
+              alert(status);
+          }
+        });
+      }
 
       /***********************************************************/
       // Test Cases Select
@@ -1798,7 +1871,7 @@
         console.log(scenario);
         /*
         $.ajax({
-          url: 'generateRegScenario.php',
+          url: 'generateScenario.php',
           type: 'POST',
           data: {
               S: scenario,
@@ -1918,7 +1991,7 @@
         console.log(scenario);
         /*
         $.ajax({
-          url: 'generateRegScenario.php',
+          url: 'generateScenario.php',
           type: 'POST',
           data: {
               S: scenario,
@@ -2203,7 +2276,7 @@
           console.log(tempoUsersList+"\n"+temptUsersList);
         
           $.ajax({
-              url: 'generateRegUserCsv.php',
+              url: 'generateUserCsv.php',
               type: 'POST',
               data: {
                   OUL: tempoUsersList,
@@ -2258,7 +2331,7 @@
           if(tempoUsersList.length > 12)
           {
             $.ajax({
-                url: 'generateRegUserCsv.php',
+                url: 'generateUserCsv.php',
                 type: 'POST',
                 data: {
                     OUL: tempoUsersList,
@@ -2291,7 +2364,7 @@
           else
           {
             $.ajax({
-                url: 'removeRegUserFromCsv.php',
+                url: 'removeUserFromCsv.php',
                 type: 'POST',
                 data: {
                     UL: tempoUsersList,
@@ -2337,7 +2410,7 @@
             ep = "T";
           }
           $.ajax({
-            url: 'removeRegUserFromCsv.php',
+            url: 'removeUserFromCsv.php',
             type: 'POST',
             data: {
                 UL: tempoUsersList,
@@ -2378,7 +2451,7 @@
           console.log(port_number);
           tempoUsersList = "SEQUENTIALbr";
           $.ajax({
-            url: 'removeRegUserFromCsv.php',
+            url: 'removeUserFromCsv.php',
             type: 'POST',
             data: {
                 UL: tempoUsersList,
@@ -2416,7 +2489,7 @@
             port_number += "br"+obj.firstChild.nextSibling.nextSibling.nextSibling.nextSibling.innerText;
           console.log(port_number);
           $.ajax({
-            url: 'removeRegUserFromCsv.php',
+            url: 'removeUserFromCsv.php',
             type: 'POST',
             data: {
                 UL: tempoUsersList,

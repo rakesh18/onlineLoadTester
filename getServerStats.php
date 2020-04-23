@@ -58,10 +58,10 @@
             exit(1);
         }
 
-        //mem ussage of cdotsi with pid
+        //mem ussage
         $runCmd = "top -b -n 1 -p `ps o pid= -C ".$module."` | tail -2 | head -1 | awk '{print $10}'";
         $memUsage = $ssh->exec($runCmd);
-        //cpu ussage of cdotsi with pid
+        //cpu ussage
         $runCmd = "top -b -n 1 -p `ps o pid= -C ".$module."` | tail -2 | head -1 | awk '{print $9}'";
         $cpuUsage = $ssh->exec($runCmd);
         if(strlen($memUsage) < 1 || strlen($cpuUsage) < 1)
