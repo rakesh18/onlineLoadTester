@@ -22,7 +22,7 @@
     $tableName      = str_replace(".", "_", $clientIp);
     $screenName     = $userName."_".$projectName."_".$submenu;
     $uname          = $userName."_".$projectName."_".$submenu."_".$tableName;
-    $path           = $userName."_".$projectName."_load/".$submenu."/";
+    $path           = $userName."_".$projectName."/".$network."/".$submenu."/";
     $resp           = array("message" => "Load Started",
                             "statusFlag" => "1");
     $procId  = "";
@@ -81,17 +81,17 @@
             exit(1);
         }
 
-        $runCmd = "rm -f /root/".$path.$submenu."_scenario_*.csv";
+        $runCmd = "rm -f /root/".$path."orig_reg_*.csv";
         $shellCmdRes = $sshClient->exec($runCmd);
 
-        $port = explode(";", file_get_contents("projects/external/".$path.$submenu."_user.csv"))[3];
+        $port = explode(";", file_get_contents("projects/external/".$tableName."/".$path."orig_user.csv"))[3];
         if($loadLimit > 0)
         {
-            $runCmd = "/root/".$path."./sipp ".$borderIp." -sf /root/".$path.$submenu."_scenario.xml -inf /root/".$path.$submenu."_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -m ".$loadLimit." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
+            $runCmd = "/root/".$path."./sipp ".$borderIp." -sf /root/".$path."orig_reg.xml -inf /root/".$path."orig_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -m ".$loadLimit." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
         }
         else
         {
-            $runCmd = "/root/".$path."./sipp ".$borderIp." -sf /root/".$path.$submenu."_scenario.xml -inf /root/".$path.$submenu."_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
+            $runCmd = "/root/".$path."./sipp ".$borderIp." -sf /root/".$path."orig_reg.xml -inf /root/".$path."orig_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
         }
         $screenRunCmd = "screen -d -m -S ".$screenName." ".$runCmd;
         $shellCmdRes = $sshClient->exec($screenRunCmd);
@@ -143,20 +143,29 @@
         $resp["statusFlag"] = "2";
         if($location === "external")
         {
-            $statCmd = "tail -1 /root/".$path.$submenu."_scenario_*_.csv";
+            $statCmd = "tail -1 /root/".$path."orig_reg_*_.csv";
             $stats = $sshClient->exec($statCmd);
             $stats = explode(";", $stats);
             $resp["totCalls"] = $stats[12];
             $resp["sucCalls"] = $stats[15];
             $resp["fldCalls"] = $stats[17];
 
-            $userCsvCmd = "tail -1 /root/".$path.$submenu."_scenario_*_counts.csv";
+            $userCsvCmd = "tail -1 /root/".$path."orig_reg_*_counts.csv";
             $stats = $sshClient->exec($userCsvCmd);
             $stats = explode(";", $stats);
         }
         else
         {
-            $stats = explode(";", exec("tail -1 projects/inplace/".$path."/reg_scenario_*_counts.csv"));
+            $statCmd = "tail -1 projects/inplace/".$path."orig_reg_*_.csv";
+            $stats = exec($statCmd);
+            $stats = explode(";", $stats);
+            $resp["totCalls"] = $stats[12];
+            $resp["sucCalls"] = $stats[15];
+            $resp["fldCalls"] = $stats[17];
+
+            $userCsvCmd = "tail -1 projects/inplace/".$path."orig_reg_*_counts.csv";
+            $stats = exec($userCsvCmd);
+            $stats = explode(";", $stats);
         }
         $msgTags = explode(";", $msgTags);
         $msgTagsLen = sizeof($msgTags) - 1;

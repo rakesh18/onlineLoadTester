@@ -40,14 +40,34 @@
         $stopCmd = "kill -9 ".$procId." screen -wipe";
         $shellCmdRes = $sshClient->exec($stopCmd);
 
-        $statCmd = "tail -1 /root/".$path."orig_reg_*_.csv";
+        $statCmd = "tail -1 /root/".$path."orig_scenario_*_.csv";
         $stats = $sshClient->exec($statCmd);
         $stats = explode(";", $stats);
         $resp["totCalls"] = $stats[12];
         $resp["sucCalls"] = $stats[15];
         $resp["fldCalls"] = $stats[17];
 
-        $statCountCmd = "tail -1 /root/".$path."orig_reg_*_counts.csv";
+        $statCountCmd = "tail -1 /root/".$path."orig_scenario_*_counts.csv";
+        $stats = $sshClient->exec($statCountCmd);
+        $stats = explode(";", $stats);
+        $msgTags = explode(";", $msgTags);
+        $msgTagsLen = sizeof($msgTags) - 1;
+        $i = 2;
+        $k = 0;
+        for($j = 0; $j < $msgTagsLen; $j +=1, $k += 1)
+        {
+            if(is_numeric($msgTags[$j]))
+            {
+                $resp[$msgTags[$j]."_".$k] = $stats[$i]."/".$stats[$i + 3];
+                $i = $i + 4;
+            }
+            else
+            {
+                $resp[$msgTags[$j]."_".$k] = $stats[$i];
+                $i = $i + 2;
+            }
+        }
+        $statCountCmd = "tail -1 /root/".$path."term_scenario_*_counts.csv";
         $stats = $sshClient->exec($statCountCmd);
         $stats = explode(";", $stats);
         $msgTags = explode(";", $msgTags);
@@ -57,12 +77,12 @@
         {
             if(is_numeric($msgTags[$j]))
             {
-                $resp[$msgTags[$j]."_".$j] = $stats[$i]."/".$stats[$i + 3];
+                $resp[$msgTags[$j]."_".$k] = $stats[$i]."/".$stats[$i + 3];
                 $i = $i + 4;
             }
             else
             {
-                $resp[$msgTags[$j]."_".$j] = $stats[$i];
+                $resp[$msgTags[$j]."_".$k] = $stats[$i];
                 $i = $i + 2;
             }
         }
@@ -72,15 +92,38 @@
         $stopCmd = "kill -9 ".$procId." screen -wipe";
         $shellCmdRes = exec($stopCmd);
 
-        $statCmd = "tail -1 projects/inplace/".$path."orig_reg_*_.csv";
-        $stats = exec($statCmd);
+        $stopCmd = "kill -9 ".$procId." screen -wipe";
+        $shellCmdRes = $sshClient->exec($stopCmd);
+
+        $statCmd = "tail -1 projects/inplace/".$path."orig_scenario_*_.csv";
+        $stats = $sshClient->exec($statCmd);
         $stats = explode(";", $stats);
         $resp["totCalls"] = $stats[12];
         $resp["sucCalls"] = $stats[15];
         $resp["fldCalls"] = $stats[17];
 
-        $statCountCmd = "tail -1 projects/inplace/".$path."orig_reg_*_counts.csv";
-        $stats = exec($statCountCmd);
+        $statCountCmd = "tail -1 projects/inplace/".$path."orig_scenario_*_counts.csv";
+        $stats = $sshClient->exec($statCountCmd);
+        $stats = explode(";", $stats);
+        $msgTags = explode(";", $msgTags);
+        $msgTagsLen = sizeof($msgTags) - 1;
+        $i = 2;
+        $k = 0;
+        for($j = 0; $j < $msgTagsLen; $j +=1, $k += 1)
+        {
+            if(is_numeric($msgTags[$j]))
+            {
+                $resp[$msgTags[$j]."_".$k] = $stats[$i]."/".$stats[$i + 3];
+                $i = $i + 4;
+            }
+            else
+            {
+                $resp[$msgTags[$j]."_".$k] = $stats[$i];
+                $i = $i + 2;
+            }
+        }
+        $statCountCmd = "tail -1 projects/inplace/".$path."term_scenario_*_counts.csv";
+        $stats = $sshClient->exec($statCountCmd);
         $stats = explode(";", $stats);
         $msgTags = explode(";", $msgTags);
         $msgTagsLen = sizeof($msgTags) - 1;
@@ -89,12 +132,12 @@
         {
             if(is_numeric($msgTags[$j]))
             {
-                $resp[$msgTags[$j]."_".$j] = $stats[$i]."/".$stats[$i + 3];
+                $resp[$msgTags[$j]."_".$k] = $stats[$i]."/".$stats[$i + 3];
                 $i = $i + 4;
             }
             else
             {
-                $resp[$msgTags[$j]."_".$j] = $stats[$i];
+                $resp[$msgTags[$j]."_".$k] = $stats[$i];
                 $i = $i + 2;
             }
         }
@@ -121,6 +164,5 @@
     }
     $conn->close();
 
-    $finalResp = json_encode($resp);
-    echo $finalResp;
+    echo json_encode($resp);
 ?>

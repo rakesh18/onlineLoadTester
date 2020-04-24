@@ -231,6 +231,11 @@
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap-validator/0.4.5/js/bootstrapvalidator.min.js'></script>
     <script type = "text/javascript">
+      /* If visited the page by back button */
+      if(performance.navigation.type == 2)
+      {
+        location.reload();
+      }
       $(document).ready(function() {
         <?php
         if(isset($_COOKIE['userName']) && strlen($_COOKIE['userName']) > 0)

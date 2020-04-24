@@ -18,6 +18,7 @@
   $submenu     = "";
   $loadRunning = 0;
   $endpoints   = "";
+  $setTags     = 0;
 
   if(isset($_COOKIE["userName"]))
   {
@@ -55,9 +56,6 @@
        $menu === "users" ||
        $menu === "run")
     {
-      echo '<div id = "topPane">
-              <h4 style = "float: right;margin-right: 10px;margin-top: 10px;">Welcome <img src = "user_icon.png" height = "35px" width = "35px" id = "userIcon" style = "cursor: pointer;"></h4>
-            </div>';
     }
     else
     {
@@ -80,7 +78,7 @@
     }
     if(array_key_exists($submenu, $submenus) === FALSE)
     {
-      echo "<h1>Ooops!!! Your not allowed to enter here</h1>";
+      echo "<h1>Oops!!! Your not allowed to enter here</h1>";
       exit(1);
     }
     $userDir .= $submenu."/";
@@ -96,9 +94,9 @@
   {
     $endpoints = $_POST['endpoints'];
     if(in_array($endpoints, $terminals) === FALSE ||
-       $submenu !== "scenarios")
+       array_key_exists($submenu, $submenus) === FALSE)
     {
-      echo "<h1>Oops!!! Your not allowed to enter here</h1>";
+      echo "<h1>Oops!!! Your not allowed to enter here </h1>";
       exit(1);
     }
   }
@@ -117,7 +115,7 @@
         echo "Could not connect to database";
         exit(1);
     }
-    $uname = $userName."_".$projectName."_".$network."_".$submenu."_".$tableName;
+    $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
     $sql   = "select orig_proc_id from load_status where user = '".$uname."' and status = 'running';";
     $result = $conn->query($sql);
 
@@ -130,6 +128,10 @@
     }
     $conn->close();
   }
+  echo '<div id = "topPane">
+          <h4 style = "float: left;margin-left: 10px;margin-top: 10px;"><i class="fa fa-bars" aria-hidden="true" style = "cursor: pointer;" onclick = "toggleLeftPane(this)"></i></h4>
+          <h4 style = "float: right;margin-right: 10px;margin-top: 10px;">Welcome '.$userName.'&nbsp;&nbsp;<img src = "user_icon.png" height = "35px" width = "35px" id = "userIcon" style = "cursor: pointer;"></h4>
+        </div>';
 ?>
 <!DOCTYPE html>
 <html>
@@ -439,9 +441,7 @@
                   }
                 }
                 fclose($scenarioFile);
-                setcookie($userName.$projectName.$network.$submenu,
-                          $origMsgTags,
-                          time() + (86400 * 30), "/");
+                echo '<script>localStorage.setItem("'.$userName.$projectName.$network.$submenu.'orig","'.$origMsgTags.'");</script>';
                 echo '<input type = "button" class = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
@@ -459,7 +459,7 @@
             {
               $ep = substr($endpoints, 0, 4);
               echo '<div class = "testCaseName" id = "one" value = "callmsgreg">REGISTRATION</div>';
-              echo '<div id = "regScenario" style = "display: block;">';
+              echo '<div id = "regScenario" style = "display: none;">';
                 $scenarioFile = fopen($userDir.$ep."_reg.xml", "r") or die("Unable to open file!");
                 $sendTag = 0;
                 $recvTag = 0;
@@ -579,7 +579,7 @@
                 echo '<input type = "button" class = "scenarioGen" value = "GENERATE"><br><br>';
               echo '</div>';
               echo '<div class = "testCaseName" id = "two" value = "callmsg">CALL / MESSAGE</div>';
-              echo '<div id = "callmsgScenario" style = "display: block;">';
+              echo '<div id = "callmsgScenario" style = "display: none;">';
                 $scenarioFile = fopen($userDir.$ep."_scenario.xml", "r") or die("Unable to open file!");
                 $sendTag = 0;
                 $recvTag = 0;
@@ -798,12 +798,8 @@
                   $origMsgTags = $msgTags2;
                   $termMsgTags = $msgTags;
                 }
-                setcookie($userName.$projectName.$network.$submenu."orig",
-                          $origMsgTags,
-                          time() + (86400 * 30), "/");
-                setcookie($userName.$projectName.$network.$submenu."term",
-                          $termMsgTags,
-                          time() + (86400 * 30), "/");
+                echo '<script>localStorage.setItem("'.$userName.$projectName.$network.$submenu.'orig","'.$origMsgTags.'");</script>';
+                echo '<script>localStorage.setItem("'.$userName.$projectName.$network.$submenu.'term","'.$termMsgTags.'");</script>';
                 echo '<input type = "button" class = "scenarioGen" value = "GENERATE">';
               echo '</div>';
             }
@@ -815,7 +811,7 @@
                $submenu === "imsreg" ||
                $submenu === "ltereg")
             {
-              echo '<div class = "container" id = "users">';
+              echo '<div id = "users" style = "margin-left: 20px;margin-right: 10px;">';
                 echo '<br>';
                 echo '<h2>Users</h2>';
                 echo '<div id = "userDetails">';
@@ -851,7 +847,7 @@
               <br>';
               echo '<table class="table">
                       <thead>
-                        <tr>
+                        <tr style = "background-color: #eac5cc;">
                             <th>UserName</th>
                             <th>AuthHeader</th>
                             <th>LocalIP</th>
@@ -876,7 +872,10 @@
                         }
 
                         $cols = explode(";", $line);
-                        echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)">';
+                        if($i % 2 == 0)
+                          echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)" style = "background-color: #fbf8f8;">';
+                        else
+                          echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)" style = "background-color: #e6e6c0;">';
                         foreach ($cols as $col)
                         {
                           echo '<td>' . $col . '</td>';
@@ -893,6 +892,11 @@
                       fclose($userFile);
                 echo '</tbody>
                     </table>';
+                if(strlen($origUsersList) > 12 ||
+                    strlen($termUsersList) > 12)
+                {
+                  echo '<input type = "button" id = "removeAllUserRows" value = "Remove All" style = "border-radius: 5px;margin-left: 55px;"><br><br>';
+                }
               echo '</div>';
             }
             else if(($submenu === "call")        ||
@@ -907,7 +911,7 @@
                     ($submenu === "lte2imsmsg")  ||
                     ($submenu === "lte2ltemsg"))
             {
-              echo '<div class = "container" id = "users">';
+              echo '<div id = "users" style = "margin-left: 20px;margin-right: 10px;">';
                 echo '<br>';
                 echo '<h2>Users</h2><br>';
                 echo '<div id = "userDetails">';
@@ -964,7 +968,7 @@
                 <br>';
                 echo '<table class="table">
                         <thead>
-                          <tr>
+                          <tr style = "background-color: #eac5cc;">
                               <th>EndPoint</th>
                               <th>UserName</th>
                               <th>AuthHeader</th>
@@ -991,7 +995,7 @@
                           }
 
                           $cols = explode(";", $line);
-                          echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)">';
+                          echo '<tr id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)" style = "background-color: #fbf8f8;">';
                           echo '<td>ORIG</td>';
                           foreach ($cols as $col)
                           {
@@ -1022,7 +1026,7 @@
                           }
 
                           $cols = explode(";", $line);
-                          echo '<tr class = "warning" id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)">';
+                          echo '<tr id = "users_row_' . $i . '" ondblclick = "removeUserRow(this)" style = "background-color: #e6e6c0;">';
                           echo '<td>TERM</td>';
                           foreach ($cols as $col)
                           {
@@ -1033,6 +1037,7 @@
                               $termlp = $col;
                             }
                           }
+                          echo '<td></td>';
                           $termUsersList = substr_replace($termUsersList, "br", -2);
                           echo '</tr>';
                           $i += 1;
@@ -1040,12 +1045,12 @@
                         fclose($userFile);
                   echo '</tbody>
                       </table>';
+                  if(strlen($origUsersList) > 12 ||
+                     strlen($termUsersList) > 12)
+                  {
+                    echo '<input type = "button" id = "removeAllUserRows" value = "Remove All" style = "border-radius: 5px;"><br><br>';
+                  }
               echo '</div>';
-            }
-            if(strlen($origUsersList) > 12 ||
-               strlen($termUsersList) > 12)
-            {
-              echo '<input type = "button" id = "removeAllUserRows" value = "Remove All" style = "border-radius: 5px;margin-left: 55px;">';
             }
           }
           else if($menu === "run")
@@ -1089,7 +1094,7 @@
                 exit(1);
             }
             $tableName = str_replace(".", "_", $clientIp);
-            $uname = $userName."_".$projectName."_".$network."_".$submenu."_".$tableName;
+            $uname = $userName."_".$projectName."_".$submenu."_".$tableName;
             $sql   = "select start_time, orig_proc_id, term_proc_id, orig_msg_tags, term_msg_tags from load_status where user = '".$uname."' and status = 'running';";
             $result = $conn->query($sql);
 
@@ -1111,144 +1116,121 @@
             {
               if($origProcId === "")
               {
-                if(isset($_COOKIE[$userName.$projectName.$network.$submenu."orig"]))
-                {
-                  $origMsgTags = $_COOKIE[$userName.$projectName.$network.$submenu."orig"];
-                }
-                else
-                {
-                  echo '<script>
-                          window.location.href = "index.php";
-                          window.location.replace("index.php");
-                        </script>';
-                }
+                $setTags = 1;
               }
-              $mts = explode(";", $origMsgTags);
-              $maxLen = 10;
-              foreach ($mts as $m)
+              else
               {
-                $len = strlen($m);
-                if($len >= $maxLen)
-                  $maxLen = $len;
+                $mts = explode(";", $origMsgTags);
+                $maxLen = 10;
+                foreach ($mts as $m)
+                {
+                  $len = strlen($m);
+                  if($len >= $maxLen)
+                    $maxLen = $len;
+                }
+
+                $width = 20 * $maxLen;
+                $i = 0;
+                echo '<h4>Originating</h4>';
+                echo '<table class = "table">';
+                  echo '<thead>';
+                    echo '<tr>';
+                      foreach($mts as $m)
+                      {
+                        if(strlen($m) < 2)
+                          continue;
+
+                        $m = substr($m, 1);
+
+                        if((int)($m) == 0)
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst" style = "width: '.$width.'px;">'.$m.'<br>0</div></center></th>';
+                        }
+                        else
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp" style = "width: '.$width.'px;">'.$m.'<br>0/0</div></center></th>';
+                        }
+                        $i = $i + 1;
+                      }
+                    echo '</tr>';
+                  echo '</thead>';
+                echo '</table>';
               }
-
-              $width = 20 * $maxLen;
-              $i = 0;
-              echo '<h4>Originating</h4>';
-              echo '<table class = "table">';
-                echo '<thead>';
-                  echo '<tr>';
-                    foreach($mts as $m)
-                    {
-                      if(strlen($m) < 2)
-                        continue;
-
-                      if((int)($m) == 0)
-                      {
-                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
-                      }
-                      else
-                      {
-                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
-                      }
-                      $i = $i + 1;
-                    }
-                  echo '</tr>';
-                echo '</thead>';
-              echo '</table>';
             }
             else
             {
               if($origProcId === "")
               {
-                if(isset($_COOKIE[$userName.$projectName.$network.$submenu."orig"]))
-                {
-                  $origMsgTags = $_COOKIE[$userName.$projectName.$network.$submenu."orig"];
-                }
-                else
-                {
-                  echo '<script>
-                          window.location.href = "index.php";
-                          window.location.replace("index.php");
-                        </script>';
-                }
-                if(isset($_COOKIE[$userName.$projectName.$network.$submenu."term"]))
-                {
-                  $termMsgTags = $_COOKIE[$userName.$projectName.$network.$submenu."orig"];
-                }
-                else
-                {
-                  echo '<script>
-                          window.location.href = "index.php";
-                          window.location.replace("index.php");
-                        </script>';
-                }
+                $setTags = 1;
               }
-              $mts = explode(";", $origMsgTags);
-              $maxLen = 10;
-              foreach ($mts as $m)
+              else
               {
-                $len = strlen($m);
-                if($len >= $maxLen)
-                  $maxLen = $len;
+                $mts = explode(";", $origMsgTags);
+                $maxLen = 10;
+                foreach ($mts as $m)
+                {
+                  $len = strlen($m);
+                  if($len >= $maxLen)
+                    $maxLen = $len;
+                }
+
+                $width = 20 * $maxLen;
+                $i = 0;
+                echo '<h4>Originating</h4>';
+                echo '<table class="table">';
+                  echo '<thead>';
+                    echo '<tr>';
+                      foreach($mts as $m)
+                      {
+                        if(strlen($m) < 2)
+                          continue;
+
+                        if((int)($m) == 0)
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                        }
+                        else
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                        }
+                        $i = $i + 1;
+                      }
+                    echo '</tr>';
+                  echo '</thead>';
+                echo '</table><br>';
+                $mts = explode(";", $termMsgTags);
+                $maxLen = 10;
+                foreach ($mts as $m)
+                {
+                  $len = strlen($m);
+                  if($len >= $maxLen)
+                    $maxLen = $len;
+                }
+
+                $width = 20 * $maxLen;
+                echo '<h4>Terminating</h4>';
+                echo '<table class="table">';
+                  echo '<thead>';
+                    echo '<tr>';
+                      foreach($mts as $m)
+                      {
+                        if(strlen($m) < 2)
+                          continue;
+
+                        if((int)($m) == 0)
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                        }
+                        else
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                        }
+                        $i = $i + 1;
+                      }
+                    echo '</tr>';
+                  echo '</thead>';
+                echo '</table>';
               }
-
-              $width = 20 * $maxLen;
-              $i = 0;
-              echo '<h4>Originating</h4>';
-              echo '<table class="table">';
-                echo '<thead>';
-                  echo '<tr>';
-                    foreach($mts as $m)
-                    {
-                      if(strlen($m) < 2)
-                        continue;
-
-                      if((int)($m) == 0)
-                      {
-                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
-                      }
-                      else
-                      {
-                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
-                      }
-                      $i = $i + 1;
-                    }
-                  echo '</tr>';
-                echo '</thead>';
-              echo '</table><br>';
-              $mts = explode(";", $termMsgTags);
-              $maxLen = 10;
-              foreach ($mts as $m)
-              {
-                $len = strlen($m);
-                if($len >= $maxLen)
-                  $maxLen = $len;
-              }
-
-              $width = 20 * $maxLen;
-              echo '<h4>Terminating</h4>';
-              echo '<table class="table">';
-                echo '<thead>';
-                  echo '<tr>';
-                    foreach($mts as $m)
-                    {
-                      if(strlen($m) < 2)
-                        continue;
-
-                      if((int)($m) == 0)
-                      {
-                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
-                      }
-                      else
-                      {
-                        echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
-                      }
-                      $i = $i + 1;
-                    }
-                  echo '</tr>';
-                echo '</thead>';
-              echo '</table>';
             }
             echo '</div><br><br>';
 
@@ -1268,15 +1250,15 @@
 
                 if($origProcId !== "")
                 {
-                  echo '<input type = "button" value = "STOP" id = "runLoad">&nbsp;&nbsp;';
-                  echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\'P\')">';
+                  echo '<input type = "button" value = "STOP" id = "runLoad" style = "cursor: pointer;">&nbsp;&nbsp;';
+                  echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "cursor: pointer;display: none;" onclick = "controlLoad(\'P\')">';
                   echo '<br><br><label id = "totTime" style = "display: none;">Total-Time: 0</label>';
                 }
                 else
                 {
-                  echo '<input type = "button" value = "RUN" id = "runLoad">&nbsp;&nbsp;';
-                  echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "display: none;" onclick = "controlLoad(\'P\')">';
-                  echo '<br><br><label id = "totTime" style = "display: none;">Total-Time: 0</label>';
+                  echo '<input type = "button" value = "RUN" id = "runLoad" style = "cursor: pointer;">&nbsp;&nbsp;';
+                  echo '<input type = "button" value = "PAUSE" id = "pauseLoad" style = "cursor: pointer;display: none;" onclick = "controlLoad(\'P\')">';
+                  echo '<br><br><label id = "totTime" style = "display: none;">Starting load...</label>';
                 }
                 
                 echo '<div id = "controlParameters" style = "position: relative;margin-top: 20px;display: none;">';
@@ -1367,7 +1349,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
     <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
-    <script>
+    <script type = "text/javascript">
       var scenarioSeleted = "";
       var submenu = '<?php echo $submenu; ?>';
       var endpoints = '<?php echo $endpoints; ?>';
@@ -1399,6 +1381,13 @@
       var logoutModal;
       var userName = '<?php echo $userName; ?>';
       var projectName = '<?php echo $projectName; ?>';
+      var params = {};
+      var setTags = '<?php echo $setTags; ?>';
+
+      if(performance.navigation.type == 2)
+      {
+        location.reload();
+      }
 
       // Document START
       $(document).ready(function(){
@@ -1424,9 +1413,7 @@
             $('#basicCallEndPoints').show("slow");
           }
           origMsgTags = '<?php echo $origMsgTags; ?>';
-          localStorage.setItem("origMsgTags", origMsgTags);
           termMsgTags = '<?php echo $termMsgTags; ?>';
-          localStorage.setItem("termMsgTags", termMsgTags);
           console.log(origMsgTags+"\n"+termMsgTags);
         }
         else if(menu.localeCompare("users") == 0)
@@ -1435,6 +1422,96 @@
         }
         else if(menu.localeCompare("run") == 0)
         {
+          if(setTags == 1)
+          {
+            var mts, mt;
+            var maxLen = 10;
+            var m;
+            var len;
+            var width;
+            var Tags = "";
+            var i = 0;
+            origMsgTags = localStorage.getItem(userName+projectName+network+submenu+"orig");
+            if(origMsgTags.length > 0)
+            {
+              mts = origMsgTags.split(";");
+              for (m in mts)
+              {
+                len = mts[m].length;
+                if(len >= maxLen)
+                  maxLen = len;
+              }
+
+              width = 20 * maxLen;
+              if(submenu.localeCompare("reg") != 0 &&
+                 submenu.localeCompare("imsreg") != 0 &&
+                 submenu.localeCompare("ltereg") != 0)
+              {
+                Tags += '<h4>Originating</h4>';
+              }
+              Tags += '<table class="table">';
+                Tags += '<thead>';
+                  Tags += '<tr>';
+                    for(m in mts)
+                    {
+                      if(mts[m].length < 2)
+                        continue;
+
+                      mt = mts[m].substring(1);
+                      if(parseInt(mt) > 0)
+                      {
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueResp" style = "width: '+width+'px;">'+mt+'<br>0/0</div></center></th>';
+                      }
+                      else
+                      {
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueRqst" style = "width: '+width+'px;">'+mt+'<br>0</div></center></th>';
+                      }
+                      i = i + 1;
+                    }
+                  Tags += '</tr>';
+                Tags += '</thead>';
+              Tags += '</table><br>';
+              $('#msg_tags').append(Tags);
+            }
+            termMsgTags = localStorage.getItem(userName+projectName+network+submenu+"term");
+            if(termMsgTags != null && termMsgTags.length > 0)
+            {
+              Tags = "";
+              mts = termMsgTags.split(";");
+              for (m in mts)
+              {
+                len = mts[m].length;
+                if(len >= maxLen)
+                  maxLen = len;
+              }
+
+              width = 20 * maxLen;
+              Tags += '<h4>Terminating</h4>';
+              Tags += '<table class="table">';
+                Tags += '<thead>';
+                  Tags += '<tr>';
+                    for(m in mts)
+                    {
+                      if(mts[m].length < 2)
+                        continue;
+
+                      mt = mts[m].substring(1);
+                      if(parseInt(mt) > 0)
+                      {
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueResp" style = "width: '+width+'px;">'+mt+'<br>0/0</div></center></th>';
+                      }
+                      else
+                      {
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueRqst" style = "width: '+width+'px;">'+mt+'<br>0</div></center></th>';
+                      }
+                      i = i + 1;
+                    }
+                  Tags += '</tr>';
+                Tags += '</thead>';
+              Tags += '</table>';
+              $('#msg_tags').append(Tags);
+            }
+          }
           if(network.localeCompare("ims") == 0)
           {
 
@@ -1659,6 +1736,21 @@
           }
         });
       }
+      function toggleLeftPane(obj)
+      {
+        if(document.getElementById("bottomLeftPane").style.display.localeCompare("none") == 0)
+        {
+          $('#bottomLeftPane').show("slow");
+          obj.className = "fa fa-bars";
+          document.getElementById("bottomRightPane").style.width = "84.7%";
+        }
+        else
+        {
+          $('#bottomLeftPane').hide("slow");
+          obj.className = "fa fa-ellipsis-v";
+          document.getElementById("bottomRightPane").style.width = "100%";
+        }
+      }
 
       /***********************************************************/
       // Test Cases Select
@@ -1670,12 +1762,44 @@
           var r = confirm("Load is running.\nChanges won't be submited until you stop load.\nWan't to continue?");
           if(r == true)
           {
-            window.location.href = "scenarios.php?menu=cases";
+            const roomForm = document.createElement('form');
+            params['menu'] = 'cases';
+            roomForm.method = 'POST';
+            roomForm.action = 'scenarios.php';
+            for (const key in params)
+            {
+              if(params.hasOwnProperty(key))
+              {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = params[key];
+                roomForm.appendChild(hiddenField);
+              }
+            }
+            document.body.appendChild(roomForm);
+            roomForm.submit();
           }
         }
         else if(menu.localeCompare("cases"))
         {
-          window.location.href = "scenarios.php?menu=cases";
+          const roomForm = document.createElement('form');
+          params['menu'] = 'cases';
+          roomForm.method = 'POST';
+          roomForm.action = 'scenarios.php';
+          for (const key in params)
+          {
+            if(params.hasOwnProperty(key))
+            {
+              const hiddenField = document.createElement('input');
+              hiddenField.type = 'hidden';
+              hiddenField.name = key;
+              hiddenField.value = params[key];
+              roomForm.appendChild(hiddenField);
+            }
+          }
+          document.body.appendChild(roomForm);
+          roomForm.submit();
         }
       });
 
@@ -1689,7 +1813,25 @@
           var r = confirm("Load is running.\nChanges won't be submited until you stop load.\nWan't to continue?");
           if(r == true)
           {
-            window.location.href = "scenarios.php?menu=scenarios&submenu="+submenu+"&endpoints="+endpoints;
+            const roomForm = document.createElement('form');
+            params['menu'] = 'scenarios';
+            params['submenu'] = submenu;
+            params['endpoints'] = endpoints;
+            roomForm.method = 'POST';
+            roomForm.action = 'scenarios.php';
+            for (const key in params)
+            {
+              if(params.hasOwnProperty(key))
+              {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = params[key];
+                roomForm.appendChild(hiddenField);
+              }
+            }
+            document.body.appendChild(roomForm);
+            roomForm.submit();
           }
         }
         else
@@ -1698,7 +1840,25 @@
           {
             if(menu.localeCompare("scenarios"))
             {
-              window.location.href = "scenarios.php?menu=scenarios&submenu="+submenu+"&endpoints="+endpoints;
+              const roomForm = document.createElement('form');
+              params['menu'] = 'scenarios';
+              params['submenu'] = submenu;
+              params['endpoints'] = endpoints;
+              roomForm.method = 'POST';
+              roomForm.action = 'scenarios.php';
+              for (const key in params)
+              {
+                if(params.hasOwnProperty(key))
+                {
+                  const hiddenField = document.createElement('input');
+                  hiddenField.type = 'hidden';
+                  hiddenField.name = key;
+                  hiddenField.value = params[key];
+                  roomForm.appendChild(hiddenField);
+                }
+              }
+              document.body.appendChild(roomForm);
+              roomForm.submit();
             }
           }
           else
@@ -1718,14 +1878,50 @@
         }
         else
         {
-          window.location.href = "scenarios.php?menu=scenarios&submenu="+$(this).attr('value')+"&endpoints=originating";
+          const roomForm = document.createElement('form');
+          params['menu'] = 'scenarios';
+          params['submenu'] = $(this).attr('value');
+          params['endpoints'] = 'originating';
+          roomForm.method = 'POST';
+          roomForm.action = 'scenarios.php';
+          for (const key in params)
+          {
+            if(params.hasOwnProperty(key))
+            {
+              const hiddenField = document.createElement('input');
+              hiddenField.type = 'hidden';
+              hiddenField.name = key;
+              hiddenField.value = params[key];
+              roomForm.appendChild(hiddenField);
+            }
+          }
+          document.body.appendChild(roomForm);
+          roomForm.submit();
         }
       });
       $('.endPointsName').click(function(){
         var name = $(this).text().toLowerCase();
         if(endpoints.localeCompare(name) != 0)
         {
-          window.location.href = "scenarios.php?menu=scenarios&submenu="+submenu+"&endpoints="+name;
+          const roomForm = document.createElement('form');
+          params['menu'] = 'scenarios';
+          params['submenu'] = submenu;
+          params['endpoints'] = name;
+          roomForm.method = 'POST';
+          roomForm.action = 'scenarios.php';
+          for (const key in params)
+          {
+            if(params.hasOwnProperty(key))
+            {
+              const hiddenField = document.createElement('input');
+              hiddenField.type = 'hidden';
+              hiddenField.name = key;
+              hiddenField.value = params[key];
+              roomForm.appendChild(hiddenField);
+            }
+          }
+          document.body.appendChild(roomForm);
+          roomForm.submit();
         }
       });
       $('.addUserHeaderToMsg').click(function(){
@@ -2023,7 +2219,24 @@
           var r = confirm("Load is running.\nChanges won't be submited until you stop load.\nWan't to continue?");
           if(r == true)
           {
-            window.location.href = "scenarios.php?menu=users&submenu"+submenu;
+            const roomForm = document.createElement('form');
+            params['menu'] = 'users';
+            params['submenu'] = submenu;
+            roomForm.method = 'POST';
+            roomForm.action = 'scenarios.php';
+            for (const key in params)
+            {
+              if(params.hasOwnProperty(key))
+              {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = params[key];
+                roomForm.appendChild(hiddenField);
+              }
+            }
+            document.body.appendChild(roomForm);
+            roomForm.submit();
           }
         }
         else
@@ -2032,7 +2245,24 @@
           {
             if(menu.localeCompare("users"))
             {
-              window.location.href = "scenarios.php?menu=users&submenu="+submenu;
+              const roomForm = document.createElement('form');
+              params['menu'] = 'users';
+              params['submenu'] = submenu;
+              roomForm.method = 'POST';
+              roomForm.action = 'scenarios.php';
+              for (const key in params)
+              {
+                if(params.hasOwnProperty(key))
+                {
+                  const hiddenField = document.createElement('input');
+                  hiddenField.type = 'hidden';
+                  hiddenField.name = key;
+                  hiddenField.value = params[key];
+                  roomForm.appendChild(hiddenField);
+                }
+              }
+              document.body.appendChild(roomForm);
+              roomForm.submit();
             }
           }
           else
@@ -2526,7 +2756,24 @@
         {
           if(submenu.localeCompare("") != 0)
           {
-            window.location.href = "scenarios.php?menu=run&submenu="+submenu;
+            const roomForm = document.createElement('form');
+            params['menu'] = 'run';
+            params['submenu'] = submenu;
+            roomForm.method = 'POST';
+            roomForm.action = 'scenarios.php';
+            for (const key in params)
+            {
+              if(params.hasOwnProperty(key))
+              {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = params[key];
+                roomForm.appendChild(hiddenField);
+              }
+            }
+            document.body.appendChild(roomForm);
+            roomForm.submit();
           }
           else
           {
@@ -2930,7 +3177,7 @@
                   console.log(data);
                   if(data[0] == '<')
                   {
-                    console.log("Connection issue");
+                    console.log("Connection error");
                     origStatsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
                                       }, 5000);
@@ -2977,7 +3224,16 @@
                     else
                     {
                       clearTimeout(origStatsUpdateTimer);
-                      stopLoad();
+                      if(submenu.localeCompare("reg") == 0 ||
+                         submenu.localeCompare("imsreg") == 0 ||
+                         submenu.localeCompare("ltereg") == 0)
+                      {
+                        stopRLoad();
+                      }
+                      else
+                      {
+                        stopCMLoad();
+                      }
                     }
                   }
               },
@@ -2988,20 +3244,20 @@
           });
       }
 
-      function startLoad()
+      function startRLoad()
       {
         var loadRate = document.getElementById("load_rate").value;
         var loadLimit = document.getElementById("load_limit").value;
         startTime = new Date();
           $.ajax({
               type: "POST",
-              url: "startLoadTesting.php",
+              url: "startRLoadTesting.php",
               data: {
                 SM: submenu,
                 LR: loadRate,
                 LL: loadLimit,
                 ST: startTime,
-                MT: msgTags
+                MT: origMsgTags
               },
               success:function(data)
               {
@@ -3009,7 +3265,8 @@
                 //return false;
                 if(data[0] == '<')
                 {
-                  alert("Connection issue with the client");
+                  alert("Connection error");
+                  $('#totTime').hide();
                   return false;
                 }
                 var resp = JSON.parse(data);
@@ -3054,7 +3311,7 @@
                   document.getElementById("runLoad").blur();
                   $('#runLoad').attr('value', 'STOP');
                   localStorage.setItem("runStatus", "running");
-                  pid = resp.procId;
+                  origProcId = resp.procId;
                   $('#load_rate').attr('readonly', false);
                   $('#load_limit').attr('readonly', false);
                   $('#controlParameters').show("show");
@@ -3075,35 +3332,133 @@
           });
       }
 
-      function stopLoad()
+      function stopRLoad()
       {
         $.ajax({
-            type: "POST",
-            url: "stopLoadTesting.php",
-            data: {
-              SM: submenu,
-              PID: pid,
-              MT: msgTags
-            },
-            success:function(data)
+          type: "POST",
+          url: "stopLoadTesting.php",
+          data: {
+            SM: submenu,
+            PID: origProcId,
+            MT: origMsgTags
+          },
+          success:function(data)
+          {
+            if(data[0] == '<')
             {
-              if(data[0] == '<')
+              console.log(data);
+              alert("Connection error");
+              return false;
+            }
+            var resp = JSON.parse(data);
+            if(resp.statusFlag != null &&
+                resp.statusFlag.localeCompare("0") == 0)
+            {
+              alert(resp.message);
+              return false;
+            }
+            var totalCalls = 0, successCalls = 0, rate = 0.0;
+            for(keys in resp)
+            {
+              if(keys.localeCompare("totCalls") == 0)
               {
-                console.log(data);
-                alert("Connection issue with the client");
-                return false;
+                document.getElementById("totCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                totalCalls = parseInt(resp[keys]);
               }
-              var resp = JSON.parse(data);
-              if(resp.statusFlag != null &&
-                 resp.statusFlag.localeCompare("0") == 0)
+              else if(keys.localeCompare("sucCalls") == 0)
               {
-                alert(resp.message);
-                return false;
+                document.getElementById("sucCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                successCalls = parseInt(resp[keys]);
               }
-              var totalCalls = 0, successCalls = 0, rate = 0.0;
+              else if(keys.localeCompare("fldCalls") == 0)
+              {
+                document.getElementById("fldCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+              }
+              else if(document.getElementById("msgTags" + keys) != null)
+              {
+                document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+              }
+            }
+            rate = (successCalls / totalCalls) * 100;
+            document.getElementById("sucRate").innerHTML = "<center>Success Rate<br>"+rate+"%</center>";
+            var curTime = new Date();
+            var totTime = curTime - startTime;
+            document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";          
+            clearTimeout(origStatsUpdateTimer);
+            document.getElementById("runLoad").blur();
+            $('#runLoad').attr('value', 'RUN');
+            localStorage.setItem("runStatus", "stopped");
+            $('#controlParameters').hide("show");
+            $('#load_rate').attr('readonly', false);
+            $('#load_limit').attr('readonly', false);
+            $('#pauseLoad').hide();
+            if(network.localeCompare("ims") == 0)
+            {
+
+            }
+            else
+            {
+              $('.showServerStats').attr('value', 'START');
+              clearTimeout(sbcsigStatsTimer);
+              clearTimeout(ngcpeStatsTimer);
+              clearTimeout(fsStatsTimer);
+              clearTimeout(msStatsTimer);
+              $('#c5Ip').attr('readonly', false);
+              $('#c5Username').attr('readonly', false);
+              $('#c5Password').attr('readonly', false);
+            }
+            $('#serverStats').hide();
+            $('#finalResult').show('slow');
+            reloadRun = 1;
+            origProcId = "";
+          },
+          error:function(data)
+          {
+            alert(data);
+          }
+        });
+      }
+
+      function startCMLoad()
+      {
+        var loadRate = document.getElementById("load_rate").value;
+        var loadLimit = document.getElementById("load_limit").value;
+        startTime = new Date();
+        $.ajax({
+          type: "POST",
+          url: "startCMLoadTesting.php",
+          data: {
+            SM: submenu,
+            LR: loadRate,
+            LL: loadLimit,
+            ST: startTime,
+            MT: origMsgTags+"_"+origMsgTags
+          },
+          success:function(data)
+          {
+            console.log(data);
+            //return false;
+            if(data[0] == '<')
+            {
+              alert("Connection error");
+              $('#totTime').hide();
+              return false;
+            }
+            var resp = JSON.parse(data);
+            if(resp.statusFlag.localeCompare("0") == 0)
+            {
+              alert(resp.message);
+            }
+            else if(resp.statusFlag.localeCompare("2") == 0)
+            {
               for(keys in resp)
               {
-                if(keys.localeCompare("totCalls") == 0)
+                if(keys.localeCompare("statusFlag") == 0 ||
+                    keys.localeCompare("message") == 0)
+                {
+                  continue;
+                }
+                else if(keys.localeCompare("totCalls") == 0)
                 {
                   document.getElementById("totCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
                   totalCalls = parseInt(resp[keys]);
@@ -3122,42 +3477,122 @@
                   document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
                 }
               }
-              rate = (successCalls / totalCalls) * 100;
-              document.getElementById("sucRate").innerHTML = "<center>Success Rate<br>"+rate+"%</center>";
               var curTime = new Date();
               var totTime = curTime - startTime;
-              document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";          
-              clearTimeout(origStatsUpdateTimer);
+              document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
+            }
+            else
+            {
               document.getElementById("runLoad").blur();
-              $('#runLoad').attr('value', 'RUN');
-              localStorage.setItem("runStatus", "stopped");
-              $('#controlParameters').hide("show");
+              $('#runLoad').attr('value', 'STOP');
+              localStorage.setItem("runStatus", "running");
+              origProcId = resp.oprocId;
+              termProcId = resp.tprocId;
               $('#load_rate').attr('readonly', false);
               $('#load_limit').attr('readonly', false);
-              $('#pauseLoad').hide();
-              if(network.localeCompare("ims") == 0)
-              {
-
-              }
-              else
-              {
-                $('.showServerStats').attr('value', 'START');
-                clearTimeout(sbcsigStatsTimer);
-                clearTimeout(ngcpeStatsTimer);
-                clearTimeout(fsStatsTimer);
-                clearTimeout(msStatsTimer);
-                $('#c5Ip').attr('readonly', false);
-                $('#c5Username').attr('readonly', false);
-                $('#c5Password').attr('readonly', false);
-              }
-              $('#serverStats').hide();
-              $('#finalResult').show('slow');
-              reloadRun = 1;
-            },
-            error:function(data)
-            {
-              alert(data);
+              $('#controlParameters').show("show");
+              $('#serverStats').show();
+              renderCharts();
+              $('#pauseLoad').show();
+              $('#totTime').show();
+              $('#finalResult').hide();
+              origStatsUpdateTimer = setTimeout(function(){
+                                      updateClientLoadStats();
+                                  }, 5000);
             }
+          },
+          error:function(data)
+          {
+            alert(data);
+          }
+        });
+      }
+
+      function stopCMLoad()
+      {
+        $.ajax({
+          type: "POST",
+          url: "stopCMLoadTesting.php",
+          data: {
+            SM: submenu,
+            PID: origProcId+" "+termProcId,
+            MT: origMsgTags+"_"+termMsgTags
+          },
+          success:function(data)
+          {
+            if(data[0] == '<')
+            {
+              console.log(data);
+              alert("Connection error");
+              return false;
+            }
+            var resp = JSON.parse(data);
+            if(resp.statusFlag != null &&
+                resp.statusFlag.localeCompare("0") == 0)
+            {
+              alert(resp.message);
+              return false;
+            }
+            var totalCalls = 0, successCalls = 0, rate = 0.0;
+            for(keys in resp)
+            {
+              if(keys.localeCompare("totCalls") == 0)
+              {
+                document.getElementById("totCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                totalCalls = parseInt(resp[keys]);
+              }
+              else if(keys.localeCompare("sucCalls") == 0)
+              {
+                document.getElementById("sucCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                successCalls = parseInt(resp[keys]);
+              }
+              else if(keys.localeCompare("fldCalls") == 0)
+              {
+                document.getElementById("fldCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+              }
+              else if(document.getElementById("msgTags" + keys) != null)
+              {
+                document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+              }
+            }
+            rate = (successCalls / totalCalls) * 100;
+            document.getElementById("sucRate").innerHTML = "<center>Success Rate<br>"+rate+"%</center>";
+            var curTime = new Date();
+            var totTime = curTime - startTime;
+            document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";          
+            clearTimeout(origStatsUpdateTimer);
+            document.getElementById("runLoad").blur();
+            $('#runLoad').attr('value', 'RUN');
+            localStorage.setItem("runStatus", "stopped");
+            $('#controlParameters').hide("show");
+            $('#load_rate').attr('readonly', false);
+            $('#load_limit').attr('readonly', false);
+            $('#pauseLoad').hide();
+            if(network.localeCompare("ims") == 0)
+            {
+
+            }
+            else
+            {
+              $('.showServerStats').attr('value', 'START');
+              clearTimeout(sbcsigStatsTimer);
+              clearTimeout(ngcpeStatsTimer);
+              clearTimeout(fsStatsTimer);
+              clearTimeout(msStatsTimer);
+              $('#c5Ip').attr('readonly', false);
+              $('#c5Username').attr('readonly', false);
+              $('#c5Password').attr('readonly', false);
+            }
+            $('#serverStats').hide();
+            $('#finalResult').show('slow');
+            reloadRun = 1;
+            origProcId = "";
+            termProcId = "";
+          },
+          error:function(data)
+          {
+            alert(data);
+          }
         });
       }
 
@@ -3170,8 +3605,18 @@
           }
           else
           {
-            $('#totTime').hide();
-            startLoad();
+            $('#totTime').attr('value', "Starting load...");
+            $('#totTime').show("slow");
+            if(submenu.localeCompare("reg") == 0 ||
+               submenu.localeCompare("imsreg") == 0 ||
+               submenu.localeCompare("ltereg") == 0)
+            {
+              startRLoad();
+            }
+            else
+            {
+              startCMLoad();
+            }
           }
         }
         else
@@ -3182,7 +3627,16 @@
             return false;
           }
           clearTimeout(origStatsUpdateTimer);
-          stopLoad();
+          if(submenu.localeCompare("reg") == 0 ||
+             submenu.localeCompare("imsreg") == 0 ||
+             submenu.localeCompare("ltereg") == 0)
+          {
+            stopRLoad();
+          }
+          else
+          {
+            stopCMLoad();
+          }
         }
       });
 

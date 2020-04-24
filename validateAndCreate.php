@@ -135,7 +135,10 @@
   }
   else if($location === "external")
   {
+    $locProjFlag = 0;
+    $extProjFlag = 1;
     $try = 2;
+    /*
     $sshClient = new Net_SSH2($clientIp);
     while($try > 0 &&
           !($res = $sshClient->login($clientUsername, $clientPassword)))
@@ -151,15 +154,12 @@
       exit(1);
     }
 
-    $locProjFlag = 0;
-    $extProjFlag = 0;
-
     $chckDir = "ls -Rp /root/".$userDir."/ | grep -v / | wc -l | tail -1 | awk '{print $1}'";
     $res = $sshClient->exec($chckDir);
     if($res >= 72)
     {
       $extProjFlag = 1;
-    }
+    }*/
 
     if(file_exists("projects/external/".$newTableName."/".$userDir))
     {

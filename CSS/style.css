@@ -22,7 +22,7 @@ div#bottomPane {
 }
 
 div#bottomLeftPane {
-    position: absolute;
+    position: relative;
     height: 100%;
     width: 15%;
     background-color: yellow;
@@ -189,11 +189,10 @@ div#runMenu:hover {
 }
 
 div#bottomRightPane {
-    position: absolute;
+    position: relative;
     height: 100%;
     width: 84.7%;
     background-color: rgb(227, 238, 227);
-    margin-left: 15.3%;
     overflow-y: auto;
     overflow-x: auto;
     border-radius: 5px;
