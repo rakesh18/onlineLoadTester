@@ -55,7 +55,7 @@
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1)
         {
-            if(is_numeric($msgTags[$j]))
+            if($msgTags[$j][0] === "I")
             {
                 $resp[$msgTags[$j]."_".$j] = $stats[$i]."/".$stats[$i + 3];
                 $i = $i + 4;
@@ -87,7 +87,7 @@
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1)
         {
-            if(is_numeric($msgTags[$j]))
+            if($msgTags[$j][0] === "I")
             {
                 $resp[$msgTags[$j]."_".$j] = $stats[$i]."/".$stats[$i + 3];
                 $i = $i + 4;

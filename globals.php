@@ -1,5 +1,5 @@
 <?php
-    $systemIp  = "192.168.105.104";
+    $systemIp  = "localhost";
     $responses = array("100" => "Trying",
                        "180" => "Ringing",
                        "183" => "Session Progress",
@@ -19,6 +19,11 @@
                        "503" => "Service Unavailable",
                        "604" => "Does Not Exist Anywhere",
                        "ACK" => "",
+                       "BYE" => "",
+                       "UPDATE" => "",
+                       "INVITE" => "");
+                       
+    $requests  = array("ACK" => "",
                        "BYE" => "",
                        "UPDATE" => "",
                        "INVITE" => "");

@@ -20,7 +20,7 @@
     $borderUsername = $_COOKIE["borderUsername"];
     $borderPassword = $_COOKIE["borderPassword"];
     $tableName      = str_replace(".", "_", $clientIp);
-    $screenName     = $userName."_".$projectName."_".$submenu;
+    $screenName     = $userName."_".$projectName."_".$submenu."_orig";
     $uname          = $userName."_".$projectName."_".$submenu."_".$tableName;
     $path           = $userName."_".$projectName."/".$network."/".$submenu."/";
     $resp           = array("message" => "Load Started",
@@ -97,19 +97,49 @@
         $shellCmdRes = $sshClient->exec($screenRunCmd);
         $procIdCmd = "pgrep -P `ps -ef | grep ".$screenName." | awk '{print $2}' | head -1`";
         $procId = $sshClient->exec($procIdCmd);
-        $procId = str_replace("\n","",$procId);
-        $procId = str_replace("\r","",$procId);
-
-        $checkProc = $sshClient->exec("ps o pid= -p ".$procId);
-        if(strlen($checkProc) > 1)
+        if(strlen($procId) > 0)
         {
-            $runFlag = 1;
-            $resp["procId"] = $procId;
+            $procId = str_replace("\n","",$procId);
+            $procId = str_replace("\r","",$procId);
+
+            $checkProc = $sshClient->exec("ps o pid= -p ".$procId);
+            if(strlen($checkProc) > 1)
+            {
+                $runFlag = 1;
+                $resp["procId"] = $procId;
+            }
         }
     }
     else
     {
-        
+        $runCmd = "rm -f /root/".$path."orig_reg_*.csv";
+        $shellCmdRes = exec($runCmd);
+
+        $port = explode(";", file_get_contents("projects/inplace/".$path."orig_user.csv"))[3];
+        if($loadLimit > 0)
+        {
+            $runCmd = "projects/inplace/".$path."./sipp ".$borderIp." -sf projects/inplace/".$path."orig_reg.xml -inf projects/inplace/".$path."orig_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -m ".$loadLimit." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
+        }
+        else
+        {
+            $runCmd = "projects/inplace/".$path."./sipp ".$borderIp." -sf projects/inplace/".$path."orig_reg.xml -inf projects/inplace/".$path."orig_user.csv -i ".$clientIp." -p ".$port." -r ".$loadRate." -nd -watchdog_interval 86400000 -trace_stat -trace_counts -trace_error_codes -fd 1";
+        }
+        $screenRunCmd = "screen -d -m -S ".$screenName." ".$runCmd;
+        $shellCmdRes = $sshClient->exec($screenRunCmd);
+        $procIdCmd = "pgrep -P `ps -ef | grep ".$screenName." | awk '{print $2}' | head -1`";
+        $procId = $sshClient->exec($procIdCmd);
+        if(strlen($procId) > 0)
+        {
+            $procId = str_replace("\n","",$procId);
+            $procId = str_replace("\r","",$procId);
+
+            $checkProc = $sshClient->exec("ps o pid= -p ".$procId);
+            if(strlen($checkProc) > 1)
+            {
+                $runFlag = 1;
+                $resp["procId"] = $procId;
+            }
+        }
     }
     if($runFlag == 1)
     {
@@ -124,7 +154,7 @@
             exit(1);
         }
 
-        $sql = "insert into load_status(user, status, proc_id, start_time, msg_tags) values('".$uname."', 'running', '".$procId."', '".$startTime."', '".$msgTags."');";
+        $sql = "insert into load_status(user, status, start_time, orig_proc_id, orig_msg_tags) values('".$uname."', 'running', '".$startTime."', '".$procId."', '".$msgTags."');";
 
         if ($conn->query($sql) === FALSE)
         {
@@ -172,7 +202,7 @@
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1)
         {
-            if(is_numeric($msgTags[$j]))
+            if($msgTags[$j][0] === "I")
             {
                 $resp[$msgTags[$j]."_".$j] = $stats[$i]."/".$stats[$i + 3];
                 $i = $i + 4;

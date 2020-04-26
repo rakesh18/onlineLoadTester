@@ -136,9 +136,8 @@
   else if($location === "external")
   {
     $locProjFlag = 0;
-    $extProjFlag = 1;
+    $extProjFlag = 0;
     $try = 2;
-    /*
     $sshClient = new Net_SSH2($clientIp);
     while($try > 0 &&
           !($res = $sshClient->login($clientUsername, $clientPassword)))
@@ -159,7 +158,7 @@
     if($res >= 72)
     {
       $extProjFlag = 1;
-    }*/
+    }
 
     if(file_exists("projects/external/".$newTableName."/".$userDir))
     {

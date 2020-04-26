@@ -41,6 +41,7 @@
     }
   }
 
+  /*
   if($location === "external")
   {    
     $sshClient = new Net_SSH2($clientIp);
@@ -55,7 +56,7 @@
 
     $userCsvCmd = "echo '".$scenario."' > ".$userEndFile;
     $shellCmdRes = $sshClient->exec($userCsvCmd);
-  }
+  }*/
 
   fwrite($userFile, $scenario);
   fclose($userFile);

@@ -25,7 +25,7 @@
   $userName  = $userName."_".$projectName;
   $userDir   = $userName."/".$network."/".$submenu."/";
 
-  if(strlen($origUsersList) > 0)
+  if(strlen($origUsersList) > 12)
   {
     if(strpos($origUsersList, "pr") !== FALSE)
     {
@@ -80,6 +80,7 @@
     $extFilename = "/root/".$userDir."orig_user.csv";
     $userFile = fopen($filename, "w") or die("Unable to open file!");
 
+    /*
     if($location === "external")
     {    
       $sshClient = new Net_SSH2($clientIp);
@@ -94,7 +95,7 @@
 
       $userCsvCmd = "echo '".$origUsersList."' > ".$extFilename;
       $shellCmdRes = $sshClient->exec($userCsvCmd);
-    }
+    }*/
 
     fwrite($userFile, $origUsersList);
     fclose($userFile);
@@ -102,7 +103,7 @@
     $resp["oport"] = $port;
   }
 
-  if(strlen($termUsersList) > 0)
+  if(strlen($termUsersList) > 12)
   {
     if(strpos($termUsersList, "pr") !== FALSE)
     {
@@ -157,6 +158,7 @@
     $extFilename = "/root/".$userDir."term_user.csv";
     $userFile = fopen($filename, "w") or die("Unable to open file!");
 
+    /*
     if($location === "external")
     {    
       $sshClient = new Net_SSH2($clientIp);
@@ -171,7 +173,7 @@
 
       $userCsvCmd = "echo '".$termUsersList."' > ".$extFilename;
       $shellCmdRes = $sshClient->exec($userCsvCmd);
-    }
+    }*/
 
     fwrite($userFile, $termUsersList);
     fclose($userFile);

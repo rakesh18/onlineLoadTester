@@ -295,7 +295,7 @@
                   <div class = "testCaseName" id = "one" value = "reg">BAISC REGISTRATION</div>
                   <div class = "testCaseName" id = "two" value = "call">BASIC CALL</div>
                   <div class = "testCaseName" id = "one" value = "msg">BASIC TEXT MESSAGE</div>
-                  <div class = "testCaseName" id = "one" value = "samvadcall">SAMVAD CALL</div>
+                  <div class = "testCaseName" id = "two" value = "samvadcall">SAMVAD CALL</div>
                 </div>';
             }
             
@@ -676,6 +676,7 @@
                     {
                       echo '<input type = "checkbox" id = "regRTPresp" value = "Enable RTP Flow" checked = "checked" class = "respInput">
                             <label for = "regRTPresp" class = "respLabel">Enable RTP Flow</label>&nbsp;&nbsp;';
+                      $msgTags .= "N".";";
                     }
                     else if(strpos($line, "<!--nop") !== FALSE)
                     {
@@ -685,6 +686,7 @@
                     else if(strpos($line, "<pause") !== FALSE)
                     {
                       echo 'Call Duration(in ms):&nbsp;&nbsp;<input id = "callDur" type = "number" value = "60000" min = "5000" style = "border-radius: 5px;padding-left: 5px;"><br>';
+                      $msgTags .= "P".";";
                     }
                     if(strpos($line, "</recv") !== FALSE)
                     {
@@ -771,6 +773,14 @@
                     {
                       $respCode = str_replace("\"", "", explode(" ", str_replace(">", " ", explode("=", $line)[1]))[0]);
                       $msgTags2 .= "I".$respCode.";";
+                    }
+                    else if(strpos($line, "<nop") !== FALSE)
+                    {
+                      $msgTags2 .= "N".";";
+                    }
+                    else if(strpos($line, "<pause") !== FALSE)
+                    {
+                      $msgTags2 .= "P".";";
                     }
                     continue;
                   }
@@ -895,7 +905,7 @@
                 if(strlen($origUsersList) > 12 ||
                     strlen($termUsersList) > 12)
                 {
-                  echo '<input type = "button" id = "removeAllUserRows" value = "Remove All" style = "border-radius: 5px;margin-left: 55px;"><br><br>';
+                  echo '<input type = "button" id = "removeAllUserRows" value = "Remove All" style = "border-radius: 5px;"><br><br>';
                 }
               echo '</div>';
             }
@@ -1061,7 +1071,7 @@
             {
               $userFile = $userDir."/orig_user.csv";
               $totalLines = intval(exec("wc -l ".$userFile));
-              if($totalLines < 3)
+              if($totalLines < 2)
               {
                 echo "<h1>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</h1>";
                 exit(1);
@@ -1071,14 +1081,14 @@
             {
               $userFile = $userDir."/orig_user.csv";
               $totalLines = intval(exec("wc -l ".$userFile));
-              if($totalLines < 3)
+              if($totalLines < 2)
               {
                 echo "<h1>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</h1>";
                 exit(1);
               }
               $userFile = $userDir."/term_user.csv";
               $totalLines = intval(exec("wc -l ".$userFile));
-              if($totalLines < 3)
+              if($totalLines < 2)
               {
                 echo "<p>&nbsp;&nbsp;&nbsp;&nbsp;You have not provided any user yet.</p>";
                 exit(1);
@@ -1124,33 +1134,31 @@
                 $maxLen = 10;
                 foreach ($mts as $m)
                 {
-                  $len = strlen($m);
+                  $len = strlen($m) - 1;
                   if($len >= $maxLen)
                     $maxLen = $len;
                 }
 
                 $width = 20 * $maxLen;
                 $i = 0;
-                echo '<h4>Originating</h4>';
                 echo '<table class = "table">';
                   echo '<thead>';
                     echo '<tr>';
                       foreach($mts as $m)
                       {
-                        if(strlen($m) < 2)
-                          continue;
+                        if(strlen($m) <= 0)
+                          continue;                        
 
-                        $m = substr($m, 1);
-
-                        if((int)($m) == 0)
+                        if($m[0] === "O")
                         {
-                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst" style = "width: '.$width.'px;">'.$m.'<br>0</div></center></th>';
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst" style = "width: '.$width.'px;">'.substr($m, 1).'<br>0</div></center></th>';
+                          $i = $i + 1;
                         }
-                        else
+                        else if($m[0] === "I")
                         {
-                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp" style = "width: '.$width.'px;">'.$m.'<br>0/0</div></center></th>';
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp" style = "width: '.$width.'px;">'.substr($m, 1).'<br>0/0</div></center></th>';
+                          $i = $i + 1;
                         }
-                        $i = $i + 1;
                       }
                     echo '</tr>';
                   echo '</thead>';
@@ -1169,7 +1177,7 @@
                 $maxLen = 10;
                 foreach ($mts as $m)
                 {
-                  $len = strlen($m);
+                  $len = strlen($m) - 1;
                   if($len >= $maxLen)
                     $maxLen = $len;
                 }
@@ -1182,18 +1190,24 @@
                     echo '<tr>';
                       foreach($mts as $m)
                       {
-                        if(strlen($m) < 2)
+                        if(strlen($m) <= 0)
                           continue;
 
-                        if((int)($m) == 0)
+                        if($m[0] === "O")
                         {
-                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst" style = "width: '.$width.'px;">'.substr($m, 1).'<br>0</div></center></th>';
+                          $i = $i + 1;
                         }
-                        else
+                        else if($m[0] === "N")
                         {
-                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" style = "width: '.$width.'px;"><i class="fa fa-bullhorn fa-2x" aria-hidden="true"></i><br>VOICE<br></div></center></th>';
+                          $i = $i + 1;
                         }
-                        $i = $i + 1;
+                        else if($m[0] === "I")
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp" style = "width: '.$width.'px;">'.substr($m, 1).'<br>0/0</div></center></th>';
+                          $i = $i + 1;
+                        }
                       }
                     echo '</tr>';
                   echo '</thead>';
@@ -1214,18 +1228,24 @@
                     echo '<tr>';
                       foreach($mts as $m)
                       {
-                        if(strlen($m) < 2)
+                        if(strlen($m) <= 0)
                           continue;
 
-                        if((int)($m) == 0)
+                        if($m[0] === "O")
                         {
-                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst">'.$m.'<br>0</div></center></th>';
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueRqst" style = "width: '.$width.'px;">'.substr($m, 1).'<br>0</div></center></th>';
+                          $i = $i + 1;
                         }
-                        else
+                        else if($m[0] === "N")
                         {
-                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp">'.$m.'<br>0/0</div></center></th>';
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" style = "width: '.$width.'px;"><i class="fa fa-bullhorn fa-2x" aria-hidden="true"></i><br>VOICE<br></div></center></th>';
+                          $i = $i + 1;
                         }
-                        $i = $i + 1;
+                        else if($m[0] === "I")
+                        {
+                          echo '<th id = "msgTagsHead" style = "width: '.$width.'px;"><center><div id = "msgTags'.$m.'_'.$i.'" class = "msgTagsNameValueResp" style = "width: '.$width.'px;">'.substr($m, 1).'<br>0/0</div></center></th>';
+                          $i = $i + 1;
+                        }
                       }
                     echo '</tr>';
                   echo '</thead>';
@@ -1345,10 +1365,10 @@
       </div>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
-    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src = "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script type = "text/javascript" src = "https://canvasjs.com/assets/script/canvasjs.min.js"></script>
     <script type = "text/javascript">
       var scenarioSeleted = "";
       var submenu = '<?php echo $submenu; ?>';
@@ -1383,13 +1403,16 @@
       var projectName = '<?php echo $projectName; ?>';
       var params = {};
       var setTags = '<?php echo $setTags; ?>';
+      var requests = '<?php echo json_encode($requests); ?>'.toString();
 
       if(performance.navigation.type == 2)
       {
         location.reload();
       }
 
+      /***********************************************************/
       // Document START
+      /***********************************************************/
       $(document).ready(function(){
         if(menu.localeCompare("scenarios") == 0)
         {
@@ -1437,7 +1460,7 @@
               mts = origMsgTags.split(";");
               for (m in mts)
               {
-                len = mts[m].length;
+                len = mts[m].length - 1;
                 if(len >= maxLen)
                   maxLen = len;
               }
@@ -1454,24 +1477,35 @@
                   Tags += '<tr>';
                     for(m in mts)
                     {
-                      if(mts[m].length < 2)
+                      if(mts[m].length <= 0)
                         continue;
 
-                      mt = mts[m].substring(1);
-                      if(parseInt(mt) > 0)
+                      if(mts[m].substring(0,1).localeCompare('I') == 0)
                       {
-                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueResp" style = "width: '+width+'px;">'+mt+'<br>0/0</div></center></th>';
+                        mt = mts[m].substring(1);
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mts[m]+'_'+i+'" class = "msgTagsNameValueResp" style = "width: '+width+'px;">'+mt+'<br>0/0</div></center></th>';
+                        i = i + 1;
                       }
-                      else
+                      else if(mts[m].substring(0,1).localeCompare('N') == 0)
                       {
-                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueRqst" style = "width: '+width+'px;">'+mt+'<br>0</div></center></th>';
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mts[m]+'_'+i+'" style = "width: '+width+'px;"><i class="fa fa-bullhorn fa-2x" aria-hidden="true"></i><br>VOICE<br></div></center></th>';
+                        i = i + 1;
                       }
-                      i = i + 1;
+                      else if(mts[m].substring(0,1).localeCompare('O') == 0)
+                      {
+                        mt = mts[m].substring(1);
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mts[m]+'_'+i+'" class = "msgTagsNameValueRqst" style = "width: '+width+'px;">'+mt+'<br>0</div></center></th>';
+                        i = i + 1;
+                      }
                     }
                   Tags += '</tr>';
                 Tags += '</thead>';
               Tags += '</table><br>';
               $('#msg_tags').append(Tags);
+            }
+            else
+            {
+              origMsgTags = "";
             }
             termMsgTags = localStorage.getItem(userName+projectName+network+submenu+"term");
             if(termMsgTags != null && termMsgTags.length > 0)
@@ -1480,7 +1514,7 @@
               mts = termMsgTags.split(";");
               for (m in mts)
               {
-                len = mts[m].length;
+                len = mts[m].length - 1;
                 if(len >= maxLen)
                   maxLen = len;
               }
@@ -1492,24 +1526,36 @@
                   Tags += '<tr>';
                     for(m in mts)
                     {
-                      if(mts[m].length < 2)
+                      if(mts[m].length <= 0)
                         continue;
-
-                      mt = mts[m].substring(1);
-                      if(parseInt(mt) > 0)
+                      
+                      if(mts[m].substring(0,1).localeCompare('I') == 0)
                       {
-                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueResp" style = "width: '+width+'px;">'+mt+'<br>0/0</div></center></th>';
+                        mt = mts[m].substring(1);
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mts[m]+'_'+i+'" class = "msgTagsNameValueResp" style = "width: '+width+'px;">'+mt+'<br>0/0</div></center></th>';
+                        i = i + 1;
                       }
-                      else
+                      else if(mts[m].substring(0,1).localeCompare('N') == 0)
                       {
-                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mt+'_'+i+'" class = "msgTagsNameValueRqst" style = "width: '+width+'px;">'+mt+'<br>0</div></center></th>';
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mts[m]+'_'+i+'" style = "width: '+width+'px;"><i class="fa fa-bullhorn fa-2x" aria-hidden="true"></i><br>VOICE<br></div></center></th>';
+                        i = i + 1;
                       }
-                      i = i + 1;
+                      else if(mts[m].substring(0,1).localeCompare('O') == 0)
+                      {
+                        mt = mts[m].substring(1);
+                        Tags += '<th id = "msgTagsHead" style = "width: '+width+'px;"><center><div id = "msgTags'+mts[m]+'_'+i+'" class = "msgTagsNameValueRqst" style = "width: '+width+'px;">'+mt+'<br>0</div></center></th>';
+                        i = i + 1;
+                      }
                     }
                   Tags += '</tr>';
                 Tags += '</thead>';
               Tags += '</table>';
               $('#msg_tags').append(Tags);
+              console.log(origMsgTags+"\n"+termMsgTags);
+            }
+            else
+            {
+              termMsgTags = "";
             }
           }
           if(network.localeCompare("ims") == 0)
@@ -1653,8 +1699,8 @@
           }
           if($('#runLoad').val().localeCompare("STOP") == 0)
           {
-            $('#load_rate').attr('readonly', true);
-            $('#load_limit').attr('readonly', true);
+            $('#load_rate').attr('disabled', true);
+            $('#load_limit').attr('disabled', true);
             $('#pauseLoad').show();
             $('#totTime').show();
             $('#controlParameters').show("show");
@@ -1683,7 +1729,7 @@
           + 'opacity:0;transition:opacity 0.3s;height:280px;width:300px;';
         logoutModal.innerHTML = '<center><i class="fa fa-user-circle fa-5x" aria-hidden="true" style="margin-top: 10px; auto;color:#4a80d2;"></i></center>'
                               + '<center><p style="color:#000000;font-size: 30px;margin-top: 5px;margin-bottom: 5px;"><b>'+userName+'</b></p></center>'
-                              + '<center><p style="color:#000000;font-size: 20px;margin-top:5px;margin-bottom:5px;">Project: '+projectName+'</p></center>'
+                              + '<center><p style="color:#000000;font-size: 20px;margin-top:5px;margin-bottom:5px;"><i class="fa fa-times" aria-hidden="true" style = "cursor: pointer; color:#f19292;" onclick="removeProject()"></i> Project: '+projectName+'</p></center>'
                               + '<center><i class="fa fa-sign-out fa-3x" aria-hidden="true" style="margin-top: 10px; cursor: pointer; color:red;"onclick="userLogout()"></i></center>'
                               + '<center><p style="text-align: center;color: #751006d9;margin-top: 2px;cursor: pointer;" onclick="userLogout()">LogOut</p></center>';
         document.body.appendChild(logoutModal);
@@ -1723,10 +1769,55 @@
           success: function(result, status){
               if(result[0] == "<")
               {
-                alert(resp.message);
+                console.log(result);
+                alert("Connection error");
+                return false;
               }
               else
               {
+                window.location.href = "index.php";
+                window.location.replace("index.php");
+              }
+          },
+          error: function(status, error) {
+              alert(status);
+          }
+        });
+      }
+      function removeProject()
+      {
+        var r = confirm("Are you sure want to remove Project?");
+        if(r == false)
+        {
+          return false;
+        }
+        if(origProcId.length > 0)
+        {
+          alert("Load Running. Cannot remove project.");
+          return false;
+        }
+        $.ajax({
+          url: 'userAuthentication.php',
+          type: 'POST',
+          data: {
+            username: userName,
+            mode: "projdel"
+          },
+          success: function(result, status){
+              if(result[0] == "<")
+              {
+                console.log(result);
+                alert("Connection error");
+                return false;
+              }
+              else
+              {
+                var resp = JSON.parse(result);
+                if(resp.statusFlag.localeCompare("0") == 0)
+                {
+                  alert(resp.message);
+                  return false;
+                }
                 window.location.href = "index.php";
                 window.location.replace("index.php");
               }
@@ -1816,7 +1907,7 @@
             const roomForm = document.createElement('form');
             params['menu'] = 'scenarios';
             params['submenu'] = submenu;
-            params['endpoints'] = endpoints;
+            params['endpoints'] = "originating";
             roomForm.method = 'POST';
             roomForm.action = 'scenarios.php';
             for (const key in params)
@@ -1843,7 +1934,7 @@
               const roomForm = document.createElement('form');
               params['menu'] = 'scenarios';
               params['submenu'] = submenu;
-              params['endpoints'] = endpoints;
+              params['endpoints'] = "originating";
               roomForm.method = 'POST';
               roomForm.action = 'scenarios.php';
               for (const key in params)
@@ -1993,10 +2084,10 @@
       });
       function genRegScenario(mark)
       {
-        var headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
-                       "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
+        var headLine = '<\?xml version = "1.0" encoding = "ISO-8859-1" ?>\n' +
+                       '<!DOCTYPE scenario SYSTEM "sipp.dtd">\n';
       
-        var scenarioName = "<scenario name = 'Register Load Test'>\n\n";
+        var scenarioName = '<scenario name = "Register Load Test">\n\n';
         var scenarioNameEnd = "</scenario>\n";
 
         var sndTagStart = "<send>\n";
@@ -2038,6 +2129,10 @@
                 scenario += "<recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv>\n\n";
                 label = 1;
               }
+              else if(respCode.localeCompare("401") == 0)
+              {
+                scenario += "<recv response=\""+respCode+"\" auth=\"true\"></recv>\n\n";
+              }
               else
               {
                 scenario += "<recv response=\""+respCode+"\"></recv>\n\n";
@@ -2058,14 +2153,14 @@
           {
             if(label > 0)
             {
-              scenario += "<label id='" + label + "'/>\n";
+              scenario += '<label id="' + label + '"/>\n';
               label = 0;
             }
           }
         });
         scenario += scenarioNameEnd;
         console.log(scenario);
-        /*
+        
         $.ajax({
           url: 'generateScenario.php',
           type: 'POST',
@@ -2086,14 +2181,14 @@
           error: function(status, error) {
               alert(status);
           }
-        });*/
+        });
       }
       function genCallMsgScenario(mark)
       {
-        var headLine = "<\?xml version = '1.0' encoding = 'ISO-8859-1' ?>\n" +
-                       "<!DOCTYPE scenario SYSTEM 'sipp.dtd'>\n";
+        var headLine = '<\?xml version = "1.0" encoding = "ISO-8859-1" ?>\n' +
+                       '<!DOCTYPE scenario SYSTEM "sipp.dtd">\n';
       
-        var scenarioName = "<scenario name = 'Register Load Test'>\n\n";
+        var scenarioName = '<scenario name = "Call/Message Load Test">\n\n';
         var scenarioNameEnd = "</scenario>\n";
 
         var sndTagStart = "<send>\n";
@@ -2111,6 +2206,8 @@
         var respCode;
         var reqstEndPending = 0;
 
+        var byeFound = 0;
+
         scenario = headLine +
                    scenarioName;
 
@@ -2124,6 +2221,10 @@
                         dataTagStart +
                         rqst;
             reqstEndPending = 1;
+            if(rqst.indexOf("BYE") >= 0)
+            {
+              byeFound = 1;
+            }
           }
           else if(this.className.localeCompare("origRegSdp") == 0)
           {
@@ -2146,6 +2247,15 @@
                 scenario += "<recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv>\n\n";
                 label = 1;
               }
+              else if(requests.indexOf(respCode) >= 0)
+              {
+                scenario += "<recv request=\""+respCode+"\"></recv>\n\n";
+              }
+              else if(respCode.localeCompare("200") == 0 &&
+                      byeFound == 1)
+              {
+                scenario += "<recv response=\""+respCode+"\" next=\"2\"></recv>\n\n";
+              }
               else
               {
                 scenario += "<recv response=\""+respCode+"\"></recv>\n\n";
@@ -2154,7 +2264,14 @@
             else if(this.firstChild.checked == false)
             {
               respCode = this.firstChild.value;
-              scenario += "<!--recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv-->\n\n";
+              if(requests.indexOf(respCode) >= 0)
+              {
+                scenario += "<!--recv request=\""+respCode+"\" optional=\"true\" next=\"1\"></recv-->\n\n";
+              }
+              else
+              {
+                scenario += "<!--recv response=\""+respCode+"\" optional=\"true\" next=\"1\"></recv-->\n\n";
+              }
             }
           }
           else if(this.id.localeCompare("newHeaderAdd") == 0)
@@ -2170,22 +2287,29 @@
           {
             if(label > 0)
             {
-              scenario += "<label id='" + label + "'/>\n";
-              label = 0;
+              scenario += '<label id="' + label + '"/>\n';
+              label++;
             }
           }
           else if(this.id.localeCompare("regRTPresp") == 0)
           {
-            scenario += '<nop><action><exec rtp_stream="test_5sec.wav" /></action></nop>\n';
+            scenario += '<nop><action><exec rtp_stream="/root/voice.wav" /></action></nop>\n';
           }
           else if(this.id.localeCompare("callDur") == 0)
           {
             scenario += '<pause milliseconds="'+this.value+'"/>\n\n';
           }
         });
-        scenario += scenarioNameEnd;
+        if(byeFound == 1)
+        {
+          scenario += '<label id="' + label + '"/>\n' + scenarioNameEnd;
+        }
+        else
+        {
+          scenario += scenarioNameEnd;
+        }
         console.log(scenario);
-        /*
+        
         $.ajax({
           url: 'generateScenario.php',
           type: 'POST',
@@ -2206,7 +2330,7 @@
           error: function(status, error) {
               alert(status);
           }
-        });*/
+        });
       }
 
       /***********************************************************/
@@ -2354,187 +2478,188 @@
             return false;
           }
         }
+        if(origlp.length == 0)
+          olp = "pr";
+        else
+          olp = origlp;
+        if(termlp.length == 0)
+          tlp = "pr";
+        else
+          tlp = termlp;
+
+        if(document.getElementById("userRange") != null)
+          userRange = document.getElementById("userRange").checked;
+
+        // For range of users in case of Registration load
+        if(userRange == true)
         {
-          if(origlp.length == 0)
-            olp = "pr";
-          else
-            olp = origlp;
-          if(termlp.length == 0)
-            tlp = "pr";
-          else
-            tlp = termlp;
+          tempoUsersList = origUsersList;
+          U1 = document.getElementsByClassName("uname")[0].value;
+          U2 = document.getElementsByClassName("uname")[1].value;
+          P1 = document.getElementsByClassName("pass")[0].value;
+          P2 = document.getElementsByClassName("pass")[1].value;
 
-          if(document.getElementById("userRange") != null)
-            userRange = document.getElementById("userRange").checked;
-
-          if(userRange == true)
+          if(U1.length == 0 ||
+              U2.length == 0 ||
+              P1.length == 0 ||
+              P2.length == 0)
           {
-            tempoUsersList = origUsersList;
-            U1 = document.getElementsByClassName("uname")[0].value;
-            U2 = document.getElementsByClassName("uname")[1].value;
-            P1 = document.getElementsByClassName("pass")[0].value;
-            P2 = document.getElementsByClassName("pass")[1].value;
-
-            if(U1.length == 0 ||
-               U2.length == 0 ||
-               P1.length == 0 ||
-               P2.length == 0)
-            {
-              alert("Fields cannot be empty");
-              return false;
-            }
-            if(P1 != P2)
-              k = 1;
-            else
-              k = 0;
-            for(var i = U1, P = P1; i <= U2;i++,P = P + k)
-            {
-              if(origUsersList.indexOf(i) >= 0)
-              {
-                continue;
-              }
-              tempoUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+olp+';'+server+"br";
-            }
-            portReq = 1;
+            alert("Fields cannot be empty");
+            return false;
           }
-          else if(submenu.localeCompare("reg") == 0 ||
-                  submenu.localeCompare("imsreg") == 0 ||
-                  submenu.localeCompare("ltereg") == 0)
+          if(P1 != P2)
+            k = 1;
+          else
+            k = 0;
+          for(var i = U1, P = P1; i <= U2;i++,P = P + k)
           {
+            if(origUsersList.indexOf(i) >= 0)
+            {
+              continue;
+            }
+            tempoUsersList += i+';[authentication username='+i+' password='+P+'];'+lip+';'+olp+';'+server+"br";
+          }
+          portReq = 1;
+        }
+        // Only single user entry in case of registration
+        else if(submenu.localeCompare("reg") == 0 ||
+                submenu.localeCompare("imsreg") == 0 ||
+                submenu.localeCompare("ltereg") == 0)
+        {
+          tempoUsersList = origUsersList;
+          U = document.getElementsByClassName("uname")[0].value;
+          P = document.getElementsByClassName("pass")[0].value;
+          if(U.length == 0 ||
+            P.length == 0)
+          {
+            alert("Fields cannot be empty");
+            return false;
+          }
+          else if(origUsersList.indexOf(U) >= 0)
+          {
+            alert("User alreday present.");
+            return false;
+          }
+          tempoUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+olp+';'+server+"br";
+          portReq = 1;
+        }
+        // For invite and message to provide orig and term users
+        else
+        {
+          if(origUsersList.length > 12 &&
+              termUsersList.length > 12)
+          {
+            alert("Single user for each side allowed.");
+            return false;
+          }
+
+          U1 = document.getElementsByClassName("uname")[0].value;
+          P1 = document.getElementsByClassName("pass")[0].value;
+          if((U1.length == 0 ||
+              P1.length == 0) &&
+              origUsersList.length == 12)
+          {
+            alert("Orig side fields cannot be empty");
+            return false;
+          }
+
+          U2 = document.getElementsByClassName("uname")[1].value;
+          P2 = document.getElementsByClassName("pass")[1].value;
+          CN = document.getElementsByClassName("cname")[0].value;
+          if((U2.length == 0 ||
+              P2.length == 0 ||
+              CN.length == 0) &&
+              termUsersList.length == 12)
+          {
+            alert("Term side fields cannot be empty");
+            return false;
+          }
+          
+          if(origUsersList.length > 12)
+          {
+            if(U1.length != 0 ||
+                P1.length != 0)
+            {
+              alert("Single user for ORIG side allowed.");
+              return false;
+            }
             tempoUsersList = origUsersList;
-            U = document.getElementsByClassName("uname")[0].value;
-            P = document.getElementsByClassName("pass")[0].value;
-            if(U.length == 0 ||
-              P.length == 0)
-            {
-              alert("Fields cannot be empty");
-              return false;
-            }
-            else if(origUsersList.indexOf(U) >= 0)
-            {
-              alert("User alreday present.");
-              return false;
-            }
-            tempoUsersList += U+';[authentication username='+U+' password='+P+'];'+lip+';'+olp+';'+server+"br";
-            portReq = 1;
+          }
+          else if(U1.localeCompare(U2) == 0 ||
+                  termUsersList.indexOf(U1) >= 0)
+          {
+            alert("Orig and Term users cannot be same");
+            return false;
+          }
+          else if(CN.length == 0)
+          {
+            alert("Provide the Called number");
+            return false;
           }
           else
           {
-            if(origUsersList.length > 12 &&
-               termUsersList.length > 12)
-            {
-              alert("Single user for each side allowed.");
-              return false;
-            }
+            tempoUsersList += U1+';[authentication username='+U1+' password='+P1+'];'+lip+';'+olp+';'+server+";"+CN+"br";
+          }
 
-            U1 = document.getElementsByClassName("uname")[0].value;
-            P1 = document.getElementsByClassName("pass")[0].value;
-            if((U1.length == 0 ||
-                P1.length == 0) &&
-               origUsersList.length == 12)
+          if(termUsersList.length > 12)
+          {
+            if(U2.length != 0 ||
+                P2.length != 0)
             {
-              alert("Orig side fields cannot be empty");
+              alert("Single user for TERM side allowed.");
               return false;
             }
-
-            U2 = document.getElementsByClassName("uname")[1].value;
-            P2 = document.getElementsByClassName("pass")[1].value;
-            CN = document.getElementsByClassName("cname")[0].value;
-            if((U2.length == 0 ||
-                P2.length == 0 ||
-                CN.length == 0) &&
-               termUsersList.length == 12)
-            {
-              alert("Term side fields cannot be empty");
-              return false;
-            }
-            
+            temptUsersList = termUsersList;
+          }
+          else if(U2.localeCompare(U1) == 0 ||
+                  origUsersList.split(U2).length >= 3)
+          {
+            alert("Term and Orig users cannot be same");
+            return false;
+          }
+          else
+          {
+            temptUsersList += U2+';[authentication username='+U2+' password='+P2+'];'+lip+';'+tlp+';'+server+"br";
             if(origUsersList.length > 12)
             {
-              if(U1.length != 0 ||
-                 P1.length != 0)
-              {
-                alert("Single user for ORIG side allowed.");
-                return false;
-              }
-              tempoUsersList = origUsersList;
+              var temp = origUsersList.substring(0, origUsersList.lastIndexOf(";"));
+              tempoUsersList = temp+";"+CN+"br";
             }
-            else if(U1.localeCompare(U2) == 0 ||
-                    termUsersList.indexOf(U1) >= 0)
-            {
-              alert("Orig and Term users cannot be same");
-              return false;
-            }
-            else if(CN.length == 0)
-            {
-              alert("Provide the Called number");
-              return false;
-            }
-            else
-            {
-              tempoUsersList += U1+';[authentication username='+U1+' password='+P1+'];'+lip+';'+olp+';'+server+";"+CN+"br";
-            }
-
-            if(termUsersList.length > 12)
-            {
-              if(U2.length != 0 ||
-                 P2.length != 0)
-              {
-                alert("Single user for TERM side allowed.");
-                return false;
-              }
-              temptUsersList = termUsersList;
-            }
-            else if(U2.localeCompare(U1) == 0 ||
-                    origUsersList.split(U2).length >= 3)
-            {
-              alert("Term and Orig users cannot be same");
-              return false;
-            }
-            else
-            {
-              temptUsersList += U2+';[authentication username='+U2+' password='+P2+'];'+lip+';'+tlp+';'+server+"br";
-              if(origUsersList.length > 12)
-              {
-                var temp = origUsersList.substring(0, origUsersList.lastIndexOf(";"));
-                tempoUsersList = temp+";"+CN+"br";
-              }
-            }
-            portReq = 2;
           }
-
-          console.log(tempoUsersList+"\n"+temptUsersList);
-        
-          $.ajax({
-              url: 'generateUserCsv.php',
-              type: 'POST',
-              data: {
-                  OUL: tempoUsersList,
-                  TUL: temptUsersList,
-                  PR: portReq,
-                  SM: submenu
-              },
-              success: function(result, status){
-                console.log(result);
-                var resp = JSON.parse(result);
-                if(resp.statusFlag.localeCompare("0") == 0)
-                {
-                  alert(resp.message);
-                }
-                else
-                {
-                  if(resp.oport != null && origlp.length == 0)
-                    origlp = resp.oport;
-                  if(resp.tport != null && termlp.length == 0)
-                    termlp = resp.tport;
-                  location.reload();
-                }
-              },
-              error: function(status, error) {
-                  alert(status);
-              }
-          });
+          portReq = 2;
         }
+
+        console.log(tempoUsersList+"\n"+temptUsersList);
+        
+        $.ajax({
+          url: 'generateUserCsv.php',
+          type: 'POST',
+          data: {
+            OUL: tempoUsersList,
+            TUL: temptUsersList,
+            PR: portReq,
+            SM: submenu
+          },
+          success: function(result, status){
+            console.log(result);
+            var resp = JSON.parse(result);
+            if(resp.statusFlag.localeCompare("0") == 0)
+            {
+              alert(resp.message);
+            }
+            else
+            {
+              if(resp.oport != null && origlp.length == 0)
+                origlp = resp.oport;
+              if(resp.tport != null && termlp.length == 0)
+                termlp = resp.tport;
+              location.reload();
+            }
+          },
+          error: function(status, error) {
+            alert(status);
+          }
+        });
 
         return false;
       });
@@ -3206,12 +3331,12 @@
                       }
                       else if(document.getElementById("msgTags" + keys) != null)
                       {
-                        document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                        document.getElementById("msgTags" + keys).innerHTML = keys.substr(1, (keys.indexOf('_') - 1)) + "<br>" + resp[keys];
                       }
                     }
                     if(runFlag == 1)
                     {
-                      if(stopTotTime == 0)
+                      if(stopTotTimer == 0)
                       {
                         var curTime = new Date();
                         var totTime = curTime - startTime;
@@ -3228,11 +3353,11 @@
                          submenu.localeCompare("imsreg") == 0 ||
                          submenu.localeCompare("ltereg") == 0)
                       {
-                        stopRLoad();
+                        stopRLoad("U");
                       }
                       else
                       {
-                        stopCMLoad();
+                        stopCMLoad("U");
                       }
                     }
                   }
@@ -3273,6 +3398,7 @@
                 if(resp.statusFlag.localeCompare("0") == 0)
                 {
                   alert(resp.message);
+                  $('#totTime').hide();
                 }
                 else if(resp.statusFlag.localeCompare("2") == 0)
                 {
@@ -3299,12 +3425,15 @@
                     }
                     else if(document.getElementById("msgTags" + keys) != null)
                     {
-                      document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                      document.getElementById("msgTags" + keys).innerHTML = keys.substr(1, (keys.indexOf('_') - 1)) + "<br>" + resp[keys];
                     }
                   }
                   var curTime = new Date();
                   var totTime = curTime - startTime;
                   document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
+                  $('#finalResult').show('slow');
+                  reloadRun = 1;
+                  origProcId = "";
                 }
                 else
                 {
@@ -3312,14 +3441,17 @@
                   $('#runLoad').attr('value', 'STOP');
                   localStorage.setItem("runStatus", "running");
                   origProcId = resp.procId;
-                  $('#load_rate').attr('readonly', false);
-                  $('#load_limit').attr('readonly', false);
+                  $('#load_rate').attr('disabled', true);
+                  $('#load_limit').attr('disabled', true);
                   $('#controlParameters').show("show");
                   $('#serverStats').show();
                   renderCharts();
                   $('#pauseLoad').show();
                   $('#totTime').show();
                   $('#finalResult').hide();
+                  var curTime = new Date();
+                  var totTime = curTime - startTime;
+                  document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
                   origStatsUpdateTimer = setTimeout(function(){
                                           updateClientLoadStats();
                                       }, 5000);
@@ -3332,11 +3464,11 @@
           });
       }
 
-      function stopRLoad()
+      function stopRLoad(who)
       {
         $.ajax({
           type: "POST",
-          url: "stopLoadTesting.php",
+          url: "stopRLoadTesting.php",
           data: {
             SM: submenu,
             PID: origProcId,
@@ -3347,7 +3479,12 @@
             if(data[0] == '<')
             {
               console.log(data);
-              alert("Connection error");
+              if(who.localeCompare("U") == 0)
+              {
+                stopCMLoad("U");
+              }
+              else
+                alert("Connection error.");
               return false;
             }
             var resp = JSON.parse(data);
@@ -3376,7 +3513,7 @@
               }
               else if(document.getElementById("msgTags" + keys) != null)
               {
-                document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                document.getElementById("msgTags" + keys).innerHTML = keys.substr(1, (keys.indexOf('_') - 1)) + "<br>" + resp[keys];
               }
             }
             rate = (successCalls / totalCalls) * 100;
@@ -3389,8 +3526,8 @@
             $('#runLoad').attr('value', 'RUN');
             localStorage.setItem("runStatus", "stopped");
             $('#controlParameters').hide("show");
-            $('#load_rate').attr('readonly', false);
-            $('#load_limit').attr('readonly', false);
+            $('#load_rate').attr('disabled', false);
+            $('#load_limit').attr('disabled', false);
             $('#pauseLoad').hide();
             if(network.localeCompare("ims") == 0)
             {
@@ -3407,7 +3544,6 @@
               $('#c5Username').attr('readonly', false);
               $('#c5Password').attr('readonly', false);
             }
-            $('#serverStats').hide();
             $('#finalResult').show('slow');
             reloadRun = 1;
             origProcId = "";
@@ -3432,7 +3568,7 @@
             LR: loadRate,
             LL: loadLimit,
             ST: startTime,
-            MT: origMsgTags+"_"+origMsgTags
+            MT: origMsgTags+"_"+termMsgTags
           },
           success:function(data)
           {
@@ -3448,6 +3584,7 @@
             if(resp.statusFlag.localeCompare("0") == 0)
             {
               alert(resp.message);
+              $('#totTime').hide();
             }
             else if(resp.statusFlag.localeCompare("2") == 0)
             {
@@ -3474,12 +3611,15 @@
                 }
                 else if(document.getElementById("msgTags" + keys) != null)
                 {
-                  document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                  document.getElementById("msgTags" + keys).innerHTML = keys.substr(1, (keys.indexOf('_') - 1)) + "<br>" + resp[keys];
                 }
               }
               var curTime = new Date();
               var totTime = curTime - startTime;
               document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
+              $('#finalResult').show('slow');
+              reloadRun = 1;
+              origProcId = "";
             }
             else
             {
@@ -3488,14 +3628,17 @@
               localStorage.setItem("runStatus", "running");
               origProcId = resp.oprocId;
               termProcId = resp.tprocId;
-              $('#load_rate').attr('readonly', false);
-              $('#load_limit').attr('readonly', false);
+              $('#load_rate').attr('disabled', false);
+              $('#load_limit').attr('disabled', false);
               $('#controlParameters').show("show");
               $('#serverStats').show();
               renderCharts();
               $('#pauseLoad').show();
               $('#totTime').show();
               $('#finalResult').hide();
+              var curTime = new Date();
+              var totTime = curTime - startTime;
+              document.getElementById("totTime").innerHTML = "Total-Time: " + Math.floor((totTime / 1000)) + " sec";
               origStatsUpdateTimer = setTimeout(function(){
                                       updateClientLoadStats();
                                   }, 5000);
@@ -3508,7 +3651,7 @@
         });
       }
 
-      function stopCMLoad()
+      function stopCMLoad(who)
       {
         $.ajax({
           type: "POST",
@@ -3523,7 +3666,12 @@
             if(data[0] == '<')
             {
               console.log(data);
-              alert("Connection error");
+              if(who.localeCompare("U") == 0)
+              {
+                stopCMLoad("U");
+              }
+              else
+                alert("Connection error.");
               return false;
             }
             var resp = JSON.parse(data);
@@ -3543,16 +3691,16 @@
               }
               else if(keys.localeCompare("sucCalls") == 0)
               {
-                document.getElementById("sucCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                document.getElementById("sucCalls").innerHTML = "<center>Successful Calls<br>"+resp[keys]+"</center>";
                 successCalls = parseInt(resp[keys]);
               }
               else if(keys.localeCompare("fldCalls") == 0)
               {
-                document.getElementById("fldCalls").innerHTML = "<center>Calls Created<br>"+resp[keys]+"</center>";
+                document.getElementById("fldCalls").innerHTML = "<center>Failed Calls<br>"+resp[keys]+"</center>";
               }
               else if(document.getElementById("msgTags" + keys) != null)
               {
-                document.getElementById("msgTags" + keys).innerHTML = keys.substr(0, keys.indexOf('_')) + "<br>" + resp[keys];
+                document.getElementById("msgTags" + keys).innerHTML = keys.substr(1, (keys.indexOf('_') - 1)) + "<br>" + resp[keys];
               }
             }
             rate = (successCalls / totalCalls) * 100;
@@ -3565,8 +3713,8 @@
             $('#runLoad').attr('value', 'RUN');
             localStorage.setItem("runStatus", "stopped");
             $('#controlParameters').hide("show");
-            $('#load_rate').attr('readonly', false);
-            $('#load_limit').attr('readonly', false);
+            $('#load_rate').attr('disabled', false);
+            $('#load_limit').attr('disabled', false);
             $('#pauseLoad').hide();
             if(network.localeCompare("ims") == 0)
             {
@@ -3583,7 +3731,6 @@
               $('#c5Username').attr('readonly', false);
               $('#c5Password').attr('readonly', false);
             }
-            $('#serverStats').hide();
             $('#finalResult').show('slow');
             reloadRun = 1;
             origProcId = "";
@@ -3631,11 +3778,11 @@
              submenu.localeCompare("imsreg") == 0 ||
              submenu.localeCompare("ltereg") == 0)
           {
-            stopRLoad();
+            stopRLoad("S");
           }
           else
           {
-            stopCMLoad();
+            stopCMLoad("S");
           }
         }
       });

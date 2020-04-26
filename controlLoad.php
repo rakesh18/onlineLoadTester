@@ -22,7 +22,7 @@
         exit(1);
     }
 
-    $screenName = $userName."_".$projectName."_".$submenu;
+    $screenName = $userName."_".$projectName."_".$submenu."_orig";
     $runCmd = 'screen -S '.$screenName.' -p 0 -X stuff "'.$parameter.'^M"';
     $out = $ssh->exec($runCmd);
 

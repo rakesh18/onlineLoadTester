@@ -58,6 +58,8 @@
             else
             {
                 $resp["statusFlag"] = "OFF";  
+                $killProc = "kill -9 ".$oprocessId." screen -wipe";
+                $shellCmdRes = $sshClient->exec($killProc);
             }
             $userCsvCmd = "tail -1 /root/".$origClientStats;
             $shellCmdRes = $sshClient->exec($userCsvCmd);
@@ -67,7 +69,7 @@
         {
             $ocheckProc = $sshClient->exec("ps o pid= -p ".$oprocessId);
             $tcheckProc = $sshClient->exec("ps o pid= -p ".$tprocessId);
-            if(strlen($coheckProc) > 1 &&
+            if(strlen($ocheckProc) > 1 &&
                strlen($tcheckProc) > 1)
             {
                 $resp["statusFlag"] = "ON"; 
@@ -75,6 +77,9 @@
             else
             {
                 $resp["statusFlag"] = "OFF";  
+                sleep(2);
+                $killProc = "kill -9 ".$oprocessId." ".$tprocessId." screen -wipe";
+                $shellCmdRes = $sshClient->exec($killProc);
             }
             $userCsvCmd = "tail -1 /root/".$origClientStats;
             $shellCmdRes = $sshClient->exec($userCsvCmd);
@@ -98,6 +103,7 @@
             else
             {
                 $resp["statusFlag"] = "OFF";  
+                $shellCmdRes = $sshClient->exec($killProc);
             }
             $userCsvCmd = "tail -1 projects/inplace/".$origClientStats;
             $shellCmdRes = exec($userCsvCmd);
@@ -114,7 +120,10 @@
             }
             else
             {
-                $resp["statusFlag"] = "OFF";  
+                $resp["statusFlag"] = "OFF"; 
+                sleep(2);
+                $killProc = "kill -9 ".$oprocessId." ".$tprocessId." screen -wipe";
+                $shellCmdRes = $sshClient->exec($killProc);
             }
             $userCsvCmd = "tail -1 projects/inplace/".$origClientStats;
             $shellCmdRes = exec($userCsvCmd);
@@ -132,34 +141,52 @@
     $i = 2;
     for($j = 0; $j < $msgTagsLen; $j +=1, $k += 1)
     {
-        if(is_numeric($msgTags[$j]))
+        if($msgTags[$j][0] === "I")
         {
             $resp[$msgTags[$j]."_".$k] = $origRes[$i]."/".$origRes[$i + 3];
             $i = $i + 4;
         }
-        else
+        else if($msgTags[$j][0] === "O")
         {
             $resp[$msgTags[$j]."_".$k] = $origRes[$i];
             $i = $i + 2;
         }
+        else if($msgTags[$j][0] === "N")
+        {
+            $i = $i + 2;
+        }
+        else if($msgTags[$j][0] === "P")
+        {
+            $i = $i + 2;
+            $k -= 1;
+        }
     }
-    if(strlen($mts[1]) > 0)
+    if(strlen($mts[1]) > 1)
     {
-        $msgTags = explode(";", $mts[0]);
+        $msgTags = explode(";", $mts[1]);
         $msgTagsLen = sizeof($msgTags) - 1;
         $i = 2;
         for($j = 0; $j < $msgTagsLen; $j +=1, $k += 1)
         {
-            if(is_numeric($msgTags[$j]))
-            {
-                $resp[$msgTags[$j]."_".$k] = $origRes[$i]."/".$origRes[$i + 3];
-                $i = $i + 4;
-            }
-            else
-            {
-                $resp[$msgTags[$j]."_".$k] = $origRes[$i];
-                $i = $i + 2;
-            }
+            if($msgTags[$j][0] === "I")
+        {
+            $resp[$msgTags[$j]."_".$k] = $termRes[$i]."/".$termRes[$i + 3];
+            $i = $i + 4;
+        }
+        else if($msgTags[$j][0] === "O")
+        {
+            $resp[$msgTags[$j]."_".$k] = $termRes[$i];
+            $i = $i + 2;
+        }
+        else if($msgTags[$j][0] === "N")
+        {
+            $i = $i + 2;
+        }
+        else if($msgTags[$j][0] === "P")
+        {
+            $i = $i + 2;
+            $k -= 1;
+        }
         }
     }
 
